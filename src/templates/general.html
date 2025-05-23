@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Asignación</title>
-</head>
-<body>
-    <h1>Udo</h1>
-    <p>App para gestionar postgrado</p>
-</body>
+    <head>
+        <title>Asignación</title>
+    </head>
+    <body>
+        <h1>Udo</h1>
+        <p>App para gestionar postgrado</p>
+        
+        <form action="{{url_for('autorizar_bp.login')}}" method="post">
+            <input type="text" name="nombre" placeholder="Nombre">
+            <input type="email" name="email" placeholder="Email">
+            <button type="submit">Enviar</button>
+        </form>
+    </body>
 </html>
