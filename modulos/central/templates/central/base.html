@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Control de Estudios{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Control de Estudios</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('estudiantes.index') }}">Estudiantes</a></li>
+                <li><a href="{{ url_for('profesores.index') }}">Profesores</a></li>
+                <li><a href="{{ url_for('control_academico.index') }}">Control Académico</a></li>
+                <li><a href="{{ url_for('central.index') }}">Central</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+</body>
+</html> 
