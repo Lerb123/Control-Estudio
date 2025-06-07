@@ -1,0 +1,65 @@
+{% extends "central/base.html" %}
+
+{% block title %} {{super ()}}
+Lista de Estudiantes 
+{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages()%}
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+
+<h2 class="titulo-estudiantes">Lista de Estudiantes</h2>
+<a href="{{ url_for('estudiantes.nuevo_estudiante') }}">
+    <button type="button" class="btn-nuevo-estudiante">Registrar Nuevo Estudiante</button>
+</a>
+
+<div class="tabla-estudiantes-contenedor">
+    {% if estudiantes %}
+        <table class="tabla-estudiantes">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Cédula</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Usuario</th>
+                    <th>Contraseña</th>
+                    <th>Carrera</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for estudiante in estudiantes %}
+                <tr>
+                    <td>{{ estudiante.nombre }}</td>
+                    <td>{{ estudiante.apellido }}</td>
+                    <td>{{ estudiante.cedula }}</td>
+                    <td>{{ estudiante.numero_telefono }}</td>
+                    <td>{{ estudiante.correo_electronico }}</td>
+                    <td>{{ estudiante.usuario }}</td>
+                    <td>{{ estudiante.contrasenia }}</td>
+                    <td>{{ estudiante.carrera }}</td>
+                    <td>
+                        <a href="{{ url_for('estudiantes.editar_estudiante', cedula=estudiante.cedula) }}" class="btn-accion editar">Editar</a> |
+                        <a href="{{ url_for('estudiantes.eliminar_estudiante', cedula=estudiante.cedula) }}" class="btn-accion eliminar">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <h2>No hay estudiantes registrados</h2>
+    {% endif %}
+</div>
+{% endblock %}

@@ -3,7 +3,7 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f5f5f5;
+    background-color: #eef9ff;
 }
 
 header {
@@ -100,3 +100,181 @@ footer {
     bottom: 0;
     width: 100%;
 } 
+
+/* Estudiante */
+.titulo-estudiantes {
+    text-align: center;
+    margin-top: 20px;
+    color: #2c3e50;
+}
+
+a{
+    text-decoration: none ;
+}
+
+.btn-nuevo-estudiante {
+    text-decoration: none;
+    display: block;
+    margin: 15px auto 25px auto;
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-nuevo-estudiante:hover {
+    background-color: #217dbb;
+}
+
+.tabla-estudiantes-contenedor {
+    overflow-x: auto;
+    margin: 0 auto;
+    max-width: 2000px;
+}
+
+.tabla-estudiantes {
+    width: 100%;
+    max-width: 1500;
+    margin: 0 auto 30px auto;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    border-radius: 18px;
+    margin-bottom: 30px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.tabla-estudiantes th, .tabla-estudiantes td {
+    /*border: 1px solid #60686e;*/
+    padding: 8px 12px;
+    text-align: center;
+}
+
+.tabla-estudiantes,
+.tabla-estudiantes th,
+.tabla-estudiantes td {
+    font-family: Arial, sans-serif; 
+    font-size: 0.95em;              
+    color: #2c3e50;                 
+}
+
+.tabla-estudiantes th {
+    background-color: #2c3e50;
+    color: #f1f0f0;
+}
+
+.tabla-estudiantes tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.btn-accion {
+    padding: 2px 6px;
+    border-radius: 2px;
+    text-decoration: none;
+    font-size: 0.65em;
+    margin: 0 1px;
+}
+
+.btn-accion.editar {
+    background: #2c3e50;
+    color: white;
+}
+.btn-accion.editar:hover {
+    background: #517294;
+}
+
+.btn-accion.eliminar {
+    background: #2c3e50;
+    color: white;
+}
+.btn-accion.eliminar:hover {
+    background: #517294;
+}
+
+/* Formulario de estudiante */
+.form-estudiante {
+    max-width: 500px;
+    margin: auto;
+    background: linear-gradient(135deg, #2c3e50 60%, #34495e 100%);
+    border-radius: 12px;
+    padding: 30px 20px;
+    box-shadow: 0 4px 16px rgba(44,62,80,0.15);
+}
+
+.form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.form-col {
+    flex: 1;
+    min-width: 150px;
+}
+
+.form-estudiante label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-estudiante label,
+.form-estudiante input {
+    color: #f1f1f1;
+}
+
+.form-estudiante input {
+    background: #e0e0e0;
+    color: #2c3e50;
+    border: 2px solid #34495e;   /* borde más oscuro */
+    border-radius: 4px;
+    padding: 7px 10px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.form-estudiante input::placeholder {
+    color: #34495e;  /* placeholder más oscuro */
+    opacity: 1;      /* asegura que el color se vea igual en todos los navegadores */
+}
+
+.btn-form-estudiante {
+    width: 100%;
+    padding: 10px 0;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+
+.btn-form-estudiante:hover {
+    background-color: #217dbb;
+}
+
+.form-row.correo-row {
+    display: flex;
+    flex-direction: column;
+    
+}
+
+.form-row.correo-row input[type="email"] {
+    width: 95%;
+    max-width: 100%;
+}
+
+/* Responsive para móviles */
+@media (max-width: 600px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}

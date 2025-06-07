@@ -1,0 +1,57 @@
+{% extends "central/base.html" %}
+
+{% block title %}editar Estudiante{% endblock %}
+
+{% block content %}
+<h2 class="titulo-estudiantes">Editar Estudiante</h2>
+
+{% with messages = get_flashed_messages()%}
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST" action="{{ url_for('estudiantes.editar_estudiante', cedula=estudiante.cedula) }}" class="form-estudiante">
+    <div class="form-row">
+        <div class="form-col">
+            <label for="nombre">Nombre</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Nombre" value="{{ estudiante.nombre }}" required autocomplete="given-name" maxlength="100">
+        </div>
+        <div class="form-col">
+            <label for="apellido">Apellido</label>
+            <input type="text" id="apellido" name="apellido" placeholder="Apellido" value="{{ estudiante.apellido }}" required autocomplete="family-name" maxlength="100">
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-col">
+            <label for="cedula">Cédula</label>
+            <input type="number" id="cedula" name="cedula" placeholder="Cédula" value="{{ estudiante.cedula }}" required minlength="8" maxlength="20">
+        </div>
+        <div class="form-col">
+            <label for="telefono">Teléfono</label>
+            <input type="tel" id="telefono" name="telefono" placeholder="Número de Teléfono" value="{{ estudiante.numero_telefono }}" required maxlength="20">
+        </div>
+    </div>
+    <div class="form-row correo-row">
+        <label for="correo">Correo Electrónico</label>
+        <input type="email" id="correo" name="correo" placeholder="Correo Electrónico" value="{{ estudiante.correo_electronico }}" required autocomplete="email" maxlength="100">
+    </div>
+    <div class="form-row">
+        <div class="form-col">
+            <label for="usuario">Usuario</label>
+            <input type="text" id="usuario" name="usuario" placeholder="Usuario" value="{{ estudiante.usuario }}" required maxlength="50">
+        </div>
+        <div class="form-col">
+            <label for="carrera">Carrera</label>
+            <input type="text" id="carrera" name="carrera" placeholder="Carrera" value="{{ estudiante.carrera }}" required maxlength="100">
+        </div>
+    </div>
+    <button type="submit" class="btn-form-estudiante">Editar Estudiante</button>
+</form>
+
+{% endblock %}

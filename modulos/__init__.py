@@ -12,6 +12,10 @@ def create_app():
     app.config.from_object(Config)
     
     db.init_app(app)
+
+    # Importar modelos ANTES de registrar blueprints para que SQLAlchemy los detecte
+    from modulos.central.models import Persona
+    from modulos.estudiantes.models import Estudiante
     
     # Registrar los blueprints de cada módulo
     from modulos.estudiantes import bp as estudiantes_bp
@@ -23,5 +27,9 @@ def create_app():
     app.register_blueprint(profesores_bp, url_prefix='/profesores')
     app.register_blueprint(control_academico_bp, url_prefix='/control-academico')
     app.register_blueprint(central_bp, url_prefix='/central')
+
+    # Crear tablas en la base de datos
+    with app.app_context():
+        db.create_all()
     
     return app 
