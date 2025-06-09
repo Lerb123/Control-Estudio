@@ -1,7 +1,8 @@
 from flask import render_template, redirect, url_for, flash, request
 from modulos.estudiantes import bp
 from modulos import db
-from modulos.estudiantes.models import Estudiante, Nota
+from modulos.estudiantes.models import Estudiante
+from modulos.central.models import Materia,Corte, Inscripcion
 from datetime import datetime
 
 @bp.route('/')
@@ -127,4 +128,66 @@ def eliminar_estudiante(cedula):
         db.session.rollback()
         flash(f'Error al eliminar estudiante: {str(e)}', 'danger')
     return render_template('estudiantes/index.html', estudiantes=Estudiante.query.all())
+
+@bp.route('/inscripciones/<cedula>' , methods=['GET', 'POST'])
+def inscripciones(cedula):
+    estudiante = Estudiante.query.get_or_404(cedula)
+    if request.method == 'POST':
+        #datos de la inscripcion 
+        datosMateria = request.form['materia']
+        
+        partes = datosMateria.split('-')
+        codigo_corte = partes[0].strip()
+        seccion = partes[1].strip()
+        periodo = partes[2].strip()
+        nombre = partes[3].strip()
+        codigo_materia = partes[4].strip()
+        profesor = partes[5].strip()
+
+        # Verificar si la materia ya existe
+        materia_existente = Materia.query.filter_by(codigo=codigo_materia).first()
+        if not materia_existente:
+            #creacion de materia 
+            materia = Materia(codigo=codigo_materia, nombre=nombre, profesor=profesor)
+            db.session.add(materia)
+        
+        # Verificar si el corte ya existe
+        corte_existente = Corte.query.filter_by(id=codigo_corte, seccion=seccion, periodo=periodo).first()
+        if not corte_existente:    
+            #creacion de corte 
+            corte = Corte(id=codigo_corte, materia_codigo=codigo_materia, seccion=seccion, periodo=periodo)
+            db.session.add(corte)
+
+        #verifiacr si estudiante ya esta inscrito 
+        estudiante_inscrito =  Inscripcion.query.filter_by(estudiante_cedula=estudiante.cedula, corte_id=codigo_corte).first()
+        if not estudiante_inscrito:
+            inscripcion = Inscripcion(
+                estudiante_cedula=estudiante.cedula,
+                materia_codigo=codigo_materia,
+                corte_id=codigo_corte,
+                nota=None, 
+                fecha_inscripcion=datetime.now()
+            )
+            db.session.add(inscripcion)
+            flash('Inscripción exitosa', 'success')
+        else:
+            flash('Ya estás inscrito en este corte', 'warning')
+
+        db.session.commit()
+        return redirect(url_for('estudiantes.inscripciones', cedula=estudiante.cedula))
+    # Obtén todas las inscripciones del estudiante, junto con materia y corte
+    inscripciones = Inscripcion.query.filter_by(estudiante_cedula=estudiante.cedula).all()        
+    return render_template('estudiantes/inscripciones.html',estudiante = estudiante, inscripciones=inscripciones)
+
+@bp.route('/eliminar_inscripcion/<int:inscripcion_id>')
+def eliminar_inscripcion(inscripcion_id):
+    inscripcion = Inscripcion.query.get_or_404(inscripcion_id)
+    try:
+        db.session.delete(inscripcion)
+        db.session.commit()
+        flash('Inscripción eliminada exitosamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar inscripción: {str(e)}', 'danger')
+    return redirect(url_for('estudiantes.inscripciones', cedula=inscripcion.estudiante_cedula))
 

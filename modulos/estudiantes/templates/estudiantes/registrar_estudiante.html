@@ -47,7 +47,12 @@
         </div>
         <div class="form-col">
             <label for="carrera">Carrera</label>
-            <input type="text" id="carrera" name="carrera" placeholder="Carrera" required maxlength="100">
+            <select id="carrera" name="carrera" required>
+                <option value="" disabled selected>Seleccione una Carrera</option>
+                <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+                <option value="Ingeniería Civil">Ingeniería Civil</option>
+            </select>
         </div>
     </div>
     <button type="submit" class="btn-form-estudiante">Registrar Estudiante</button>

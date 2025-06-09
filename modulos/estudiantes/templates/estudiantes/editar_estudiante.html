@@ -48,7 +48,12 @@
         </div>
         <div class="form-col">
             <label for="carrera">Carrera</label>
-            <input type="text" id="carrera" name="carrera" placeholder="Carrera" value="{{ estudiante.carrera }}" required maxlength="100">
+            <select id="carrera" name="carrera" required>
+                <option value="" disabled>Seleccione una Carrera</option>
+                <option value="Ingeniería de Sistemas" {% if estudiante.carrera == "Ingeniería de Sistemas" %}selected{% endif %}>Ingeniería de Sistemas</option>
+                <option value="Ingeniería Industrial" {% if estudiante.carrera == "Ingeniería Industrial" %}selected{% endif %}>Ingeniería Industrial</option>
+                <option value="Ingeniería Civil" {% if estudiante.carrera == "Ingeniería Civil" %}selected{% endif %}>Ingeniería Civil</option>
+            </select>
         </div>
     </div>
     <button type="submit" class="btn-form-estudiante">Editar Estudiante</button>

@@ -1,0 +1,66 @@
+{% extends "central/base.html" %}
+{% block title %} {{super ()}} Inscripciones de Estudiante {% endblock %}
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<h2 class="titulo-estudiantes">Inscripciones de Estudiante</h2>
+
+<form action="{{ url_for('estudiantes.inscripciones', cedula=estudiante.cedula) }}" method="POST">
+    <input type = "hidden" name = "cedula" value = "{{ estudiante.cedula }}">
+    <select name="materia" required>
+        <option value="" disabled selected>Seleccione una Materia</option>
+        <option value="GGH-H-2020-Matemáticas I-0787784-Rafael.E">Matemáticas I - 0787784 - Rafael.E</option>
+        <option value="FHH-B-2020-Programación I-0787785-Ana.G">Programación I - 0787785 - Ana.G</option>
+        <option value="GHC-C-2020-Bases de Datos-0787786-Luis.M">Bases de Datos - 0787786 - Luis.M</option>
+    </select>
+    <button type="submit" class="btn-form-estudiante">Inscribir Materia</button>
+</form>
+    <div class="tabla-estudiantes-contenedor">
+        {% if inscripciones %}
+            <table class="tabla-estudiantes">
+                <thead>
+                    <tr>
+                        <th>Corte</th>
+                        <th>Sección</th>
+                        <th>Periodo</th>
+                        <th>Materia</th>
+                        <th>Código</th>
+                        <th>Profesor</th>
+                        <th>Fecha Inscripción</th>
+                        <th>Nota</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inscripcion in inscripciones %}
+                        <tr>
+                            <td>{{ inscripcion.corte.id }}</td>
+                            <td>{{ inscripcion.corte.seccion }}</td>
+                            <td>{{ inscripcion.corte.periodo }}</td>
+                            <td>{{ inscripcion.materia.nombre }}</td>
+                            <td>{{ inscripcion.materia.codigo }}</td>
+                            <td>{{ inscripcion.materia.profesor }}</td>
+                            <td>{{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ inscripcion.nota or 'Pendiente' }}</td>
+                            <td>
+                                <a href="{{ url_for('estudiantes.eliminar_inscripcion', cedula=estudiante.cedula, inscripcion_id=inscripcion.id) }}" class="btn-accion eliminar">Eliminar</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+
+        {% else %}
+            <p>No hay inscripciones registradas para este estudiante.</p>
+        {% endif %} 
+
+
+{% endblock %}
