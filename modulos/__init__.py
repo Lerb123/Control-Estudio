@@ -23,9 +23,15 @@ def create_app():
     from modulos.control_academico import bp as control_academico_bp
     from modulos.central import bp as central_bp
     
+    # Configurar los blueprints con sus carpetas de plantillas
+    estudiantes_bp.template_folder = 'templates'
+    profesores_bp.template_folder = 'templates'
+    control_academico_bp.template_folder = 'templates'
+    central_bp.template_folder = 'templates'
+    
     app.register_blueprint(estudiantes_bp, url_prefix='/estudiantes')
     app.register_blueprint(profesores_bp, url_prefix='/profesores')
-    app.register_blueprint(control_academico_bp, url_prefix='/control-academico')
+    app.register_blueprint(control_academico_bp, url_prefix='/control_academico')
     app.register_blueprint(central_bp, url_prefix='/central')
 
     # Crear tablas en la base de datos

@@ -1,0 +1,61 @@
+{% extends "central/base.html" %}
+
+{% block title %} {{super ()}}
+Lista de Profesores 
+{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages()%}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<h2 class="titulo-estudiantes">Lista de Profesores</h2>
+<a href="{{ url_for('profesores.nuevo_profesor') }}">
+    <button type="button" class="btn-nuevo-estudiante">Registrar Nuevo Profesor</button>
+</a>
+
+<div class="tabla-estudiantes-contenedor">
+    {% if profesores %}
+        <table class="tabla-estudiantes">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Cédula</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Usuario</th>
+                    <th>Título</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for profesor in profesores %}
+                <tr>
+                    <td>{{ profesor.nombre }}</td>
+                    <td>{{ profesor.apellido }}</td>
+                    <td>{{ profesor.cedula }}</td>
+                    <td>{{ profesor.numero_telefono }}</td>
+                    <td>{{ profesor.correo_electronico }}</td>
+                    <td>{{ profesor.usuario }}</td>
+                    <td>{{ profesor.titulo }}</td>
+                    <td>
+                        <a href="{{ url_for('profesores.editar_profesor', cedula=profesor.cedula) }}" class="btn-accion editar">Editar</a> |
+                        <a href="{{ url_for('profesores.eliminar_profesor', cedula=profesor.cedula) }}" class="btn-accion eliminar">Eliminar</a> |
+                        <a href="{{ url_for('profesores.materias_profesor', cedula=profesor.cedula) }}" class="btn-accion eliminar">Materias</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <h2>No hay profesores registrados</h2>
+    {% endif %}
+</div>
+{% endblock %} 

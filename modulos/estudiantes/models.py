@@ -1,4 +1,5 @@
-from modulos.central.models import Persona,Materia, Corte, Inscripcion 
+from modulos.central.models import Persona
+from modulos.control_academico.models import Materia, Corte, Inscripcion
 from modulos import db 
 
 class Estudiante(Persona):

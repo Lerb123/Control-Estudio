@@ -1,0 +1,157 @@
+{% extends "central/base.html" %}
+
+{% block content %}
+<div class="welcome-container">
+    <h1 class="titulo-estudiantes">Materias del Profesor: {{ profesor.nombre }} {{ profesor.apellido }}</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Lista de todas las materias disponibles -->
+    <div class="form-container">
+        <h2>Materias Disponibles</h2>
+        {% if materias_sin_profesor %}
+            <table class="tabla-estudiantes">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for materia in materias_sin_profesor %}
+                    <tr>
+                        <td>{{ materia.codigo }}</td>
+                        <td>{{ materia.nombre }}</td>
+                        <td>
+                            {% if materia.profesor is none %}
+                                <span class="badge badge-success">Sin Profesor</span>
+                            {% else %}
+                                <span class="badge badge-warning">Asignada a otro profesor</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('profesores.asignar_materia_existente', cedula=profesor.cedula, codigo=materia.codigo) }}" 
+                               class="btn-accion editar"
+                               onclick="return confirm('¿Desea asignarse a esta materia?')">Asignar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay materias disponibles para asignar.</p>
+        {% endif %}
+    </div>
+
+    <!-- Lista de materias asignadas al profesor -->
+    <div class="tabla-estudiantes-contenedor">
+        <h2>Mis Materias Asignadas</h2>
+        {% if materias %}
+            <table class="tabla-estudiantes">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for materia in materias %}
+                    <tr>
+                        <td>{{ materia.codigo }}</td>
+                        <td>{{ materia.nombre }}</td>
+                        <td>
+                            <a href="{{ url_for('profesores.desasignar_materia', cedula=profesor.cedula, codigo=materia.codigo) }}" 
+                               class="btn-accion warning"
+                               onclick="return confirm('¿Está seguro de desasignar esta materia?')">Desasignar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay materias asignadas actualmente.</p>
+        {% endif %}
+    </div>
+
+    <a href="{{ url_for('profesores.index') }}" class="btn-nuevo-estudiante">Volver a Profesores</a>
+</div>
+
+<style>
+.form-container {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.btn-accion {
+    padding: 5px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: white;
+    margin: 0 5px;
+}
+
+.btn-accion.editar {
+    background-color: #28a745;
+}
+
+.btn-accion.editar:hover {
+    background-color: #218838;
+}
+
+.btn-accion.warning {
+    background-color: #ffc107;
+    color: black;
+}
+
+.btn-accion.warning:hover {
+    background-color: #e0a800;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: black;
+}
+</style>
+{% endblock %} 

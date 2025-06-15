@@ -15,52 +15,59 @@
 <h2 class="titulo-estudiantes">Inscripciones de Estudiante</h2>
 
 <form action="{{ url_for('estudiantes.inscripciones', cedula=estudiante.cedula) }}" method="POST">
-    <input type = "hidden" name = "cedula" value = "{{ estudiante.cedula }}">
-    <select name="materia" required>
-        <option value="" disabled selected>Seleccione una Materia</option>
-        <option value="GGH-H-2020-Matemáticas I-0787784-Rafael.E">Matemáticas I - 0787784 - Rafael.E</option>
-        <option value="FHH-B-2020-Programación I-0787785-Ana.G">Programación I - 0787785 - Ana.G</option>
-        <option value="GHC-C-2020-Bases de Datos-0787786-Luis.M">Bases de Datos - 0787786 - Luis.M</option>
-    </select>
+    <input type="hidden" name="cedula" value="{{ estudiante.cedula }}">
+    <div class="form-group">
+        <label for="materia">Seleccione una Materia:</label>
+        <select name="materia" id="materia" required>
+            <option value="" disabled selected>Seleccione una Materia</option>
+            {% for materia in materias_disponibles %}
+                <option value="{{ materia.codigo }}-01-2024-{{ materia.nombre }}-{{ materia.codigo }}-{{ materia.profesor }}">
+                    {{ materia.nombre }} - {{ materia.codigo }} - Prof: {{ materia.profesor }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
     <button type="submit" class="btn-form-estudiante">Inscribir Materia</button>
 </form>
-    <div class="tabla-estudiantes-contenedor">
-        {% if inscripciones %}
-            <table class="tabla-estudiantes">
-                <thead>
+
+<div class="tabla-estudiantes-contenedor">
+    {% if inscripciones %}
+        <table class="tabla-estudiantes">
+            <thead>
+                <tr>
+                    <th>Corte</th>
+                    <th>Sección</th>
+                    <th>Periodo</th>
+                    <th>Materia</th>
+                    <th>Código</th>
+                    <th>Profesor</th>
+                    <th>Fecha Inscripción</th>
+                    <th>Nota</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inscripcion in inscripciones %}
                     <tr>
-                        <th>Corte</th>
-                        <th>Sección</th>
-                        <th>Periodo</th>
-                        <th>Materia</th>
-                        <th>Código</th>
-                        <th>Profesor</th>
-                        <th>Fecha Inscripción</th>
-                        <th>Nota</th>
-                        <th>Acciones</th>
+                        <td>{{ inscripcion.corte.id }}</td>
+                        <td>{{ inscripcion.corte.seccion }}</td>
+                        <td>{{ inscripcion.corte.periodo }}</td>
+                        <td>{{ inscripcion.materia.nombre }}</td>
+                        <td>{{ inscripcion.materia.codigo }}</td>
+                        <td>{{ inscripcion.materia.profesor or 'Sin profesor asignado' }}</td>
+                        <td>{{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ inscripcion.nota or 'Pendiente' }}</td>
+                        <td>
+                            <a href="{{ url_for('estudiantes.eliminar_inscripcion', cedula=estudiante.cedula, inscripcion_id=inscripcion.id) }}" 
+                               class="btn-accion eliminar"
+                               onclick="return confirm('¿Está seguro de eliminar esta inscripción?')">Eliminar</a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% for inscripcion in inscripciones %}
-                        <tr>
-                            <td>{{ inscripcion.corte.id }}</td>
-                            <td>{{ inscripcion.corte.seccion }}</td>
-                            <td>{{ inscripcion.corte.periodo }}</td>
-                            <td>{{ inscripcion.materia.nombre }}</td>
-                            <td>{{ inscripcion.materia.codigo }}</td>
-                            <td>{{ inscripcion.materia.profesor }}</td>
-                            <td>{{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ inscripcion.nota or 'Pendiente' }}</td>
-                            <td>
-                                <a href="{{ url_for('estudiantes.eliminar_inscripcion', cedula=estudiante.cedula, inscripcion_id=inscripcion.id) }}" class="btn-accion eliminar">Eliminar</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-
-        {% else %}
-            <p>No hay inscripciones registradas para este estudiante.</p>
-        {% endif %} 
-
-
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay inscripciones registradas para este estudiante.</p>
+    {% endif %}
+</div>
 {% endblock %}

@@ -1,0 +1,79 @@
+{% extends "central/base.html" %}
+
+{% block title %} {{super ()}} Gestión de Materias {% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+    <h1 class="titulo-estudiantes">Gestión de Materias</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Formulario para nueva materia -->
+    <div class="form-container">
+        <h2>Nueva Materia</h2>
+        <form action="{{ url_for('control_academico.crear_materia') }}" method="POST">
+            <div class="form-group">
+                <label for="codigo">Código:</label>
+                <input type="text" id="codigo" name="codigo" required>
+            </div>
+            <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            <div class="form-group">
+                <label for="profesor">Profesor (Opcional):</label>
+                <select name="profesor" id="profesor">
+                    <option value="">Sin profesor asignado</option>
+                    {% for profesor in profesores %}
+                        <option value="{{ profesor.cedula }}">{{ profesor.nombre }} {{ profesor.apellido }} - {{ profesor.cedula }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-nuevo-estudiante">Crear Materia</button>
+        </form>
+    </div>
+
+    <!-- Lista de materias -->
+    <div class="tabla-estudiantes-contenedor">
+        <h2>Materias Registradas</h2>
+        {% if materias %}
+            <table class="tabla-estudiantes">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Profesor</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for materia in materias %}
+                    <tr>
+                        <td>{{ materia.codigo }}</td>
+                        <td>{{ materia.nombre }}</td>
+                        <td>{{ materia.profesor or 'Sin profesor asignado' }}</td>
+                        <td>
+                            <a href="{{ url_for('control_academico.editar_materia', codigo=materia.codigo) }}" 
+                               class="btn-accion editar">Editar</a>
+                            <a href="{{ url_for('control_academico.eliminar_materia', codigo=materia.codigo) }}" 
+                               class="btn-accion eliminar"
+                               onclick="return confirm('¿Está seguro de eliminar esta materia?')">Eliminar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay materias registradas.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

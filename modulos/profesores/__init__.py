@@ -1,5 +1,7 @@
 from flask import Blueprint
 
-bp = Blueprint('profesores', __name__)
+bp = Blueprint('profesores', __name__, 
+               url_prefix='/profesores',
+               template_folder='templates')
 
-from modulos.profesores import routes 
+from . import routes 

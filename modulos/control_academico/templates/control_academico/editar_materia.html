@@ -1,0 +1,45 @@
+{% extends "central/base.html" %}
+
+{% block title %} {{super ()}} Editar Materia {% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+    <h1 class="titulo-estudiantes">Editar Materia</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
+        <form action="{{ url_for('control_academico.editar_materia', codigo=materia.codigo) }}" method="POST">
+            <div class="form-group">
+                <label for="codigo">Código:</label>
+                <input type="text" id="codigo" value="{{ materia.codigo }}" disabled>
+            </div>
+            <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" value="{{ materia.nombre }}" required>
+            </div>
+            <div class="form-group">
+                <label for="profesor">Profesor (Opcional):</label>
+                <select name="profesor" id="profesor">
+                    <option value="">Sin profesor asignado</option>
+                    {% for profesor in profesores %}
+                        <option value="{{ profesor.cedula }}" {% if profesor.cedula == materia.profesor %}selected{% endif %}>
+                            {{ profesor.nombre }} {{ profesor.apellido }} - {{ profesor.cedula }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-nuevo-estudiante">Actualizar Materia</button>
+            <a href="{{ url_for('control_academico.listar_materias') }}" class="btn-nuevo-estudiante" style="background-color: #6c757d;">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %} 
