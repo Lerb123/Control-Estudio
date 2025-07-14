@@ -1,46 +1,133 @@
 {% extends "central/base.html" %}
-{% block title %}Gestión de Notas{% endblock %}
+{% block title %}Gestión de Notas - {{ profesor.nombre }} {{ profesor.apellido }}{% endblock %}
 {% block content %}
-<h2>Gestión de Notas</h2>
+<div class="welcome-container">
+    <h1 class="titulo-estudiantes">Gestión de Notas - {{ profesor.nombre }} {{ profesor.apellido }}</h1>
 
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-info">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-<table class="tabla-estudiantes">
-    <thead>
-        <tr>
-            <th>Estudiante</th>
-            <th>Cédula</th>
-            <th>Materia</th>
-            <th>Programa</th>
-            <th>Corte</th>
-            <th>Sección</th>
-            <th>Zona</th>
-            <th>Nota</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in estudiantes_con_notas %}
-        <tr>
-            <td>{{ item.estudiante.nombre }} {{ item.estudiante.apellido }}</td>
-            <td>{{ item.estudiante.cedula }}</td>
-            <td>{{ item.materia.nombre }}</td>
-            <td>{{ item.programa.nombre }}</td>
-            <td>{{ item.corte.id }}</td>
-            <td>{{ item.corte.seccion }}</td>
-            <td>{{ item.corte.zona }}</td>
-            <td>{% if item.nota %}{{ item.nota.nota }}{% else %}No asignada{% endif %}</td>
-            <td>
-                <a href="{{ url_for('profesores.editar_nota', cedula=profesor.cedula, estudiante_cedula=item.estudiante.cedula, materia_codigo=item.materia.codigo) }}" class="btn-form-estudiante">Editar Nota</a>
-            </td>
-        </tr>
+    {% if asignaciones %}
+        {% for asignacion in asignaciones %}
+        <div class="tabla-estudiantes-contenedor">
+            <h3>{{ asignacion.materia.nombre }} - Corte: {{ asignacion.corte.seccion }} - {{ asignacion.corte.zona }}</h3>
+            <p><strong>Programa:</strong> {{ asignacion.materia.programa.nombre }}</p>
+            
+            {% set estudiantes_inscritos = asignacion.corte.inscripciones %}
+            {% if estudiantes_inscritos %}
+                <table class="tabla-estudiantes">
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th>Cédula</th>
+                            <th>Fecha Inscripción</th>
+                            <th>Estado Pago</th>
+                            <th>Nota</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inscripcion in estudiantes_inscritos %}
+                        {% set estudiante = inscripcion.estudiante %}
+                        {% set nota_estudiante = notas|selectattr("estudiante_id", "equalto", estudiante.cedula)|selectattr("materia_codigo", "equalto", asignacion.materia.codigo)|first %}
+                        <tr>
+                            <td>{{ estudiante.nombre }} {{ estudiante.apellido }}</td>
+                            <td>{{ estudiante.cedula }}</td>
+                            <td>{{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                {% if inscripcion.estado_pago %}
+                                    <span class="badge badge-success">Pagado</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if nota_estudiante %}
+                                    <strong>{{ nota_estudiante.nota }}/20</strong>
+                                {% else %}
+                                    <span class="text-muted">No asignada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('profesores.editar_nota', cedula=profesor.cedula, estudiante_cedula=estudiante.cedula, materia_codigo=asignacion.materia.codigo) }}" 
+                                   class="btn-accion editar">
+                                    {% if nota_estudiante %}Editar Nota{% else %}Asignar Nota{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted">No hay estudiantes inscritos en este corte.</p>
+            {% endif %}
+        </div>
         {% endfor %}
-    </tbody>
-</table>
+    {% else %}
+        <div class="alert alert-warning">
+            <p>No tienes materias asignadas actualmente. Para gestionar notas, primero debes tener materias asignadas.</p>
+            <a href="{{ url_for('profesores.materias_profesor', cedula=profesor.cedula) }}" class="btn-form-estudiante">Ver Mis Materias</a>
+        </div>
+    {% endif %}
+
+    <a href="{{ url_for('profesores.materias_profesor', cedula=profesor.cedula) }}" class="btn-nuevo-estudiante">Volver a Mis Materias</a>
+</div>
+
+<style>
+.badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: black;
+}
+
+.btn-accion {
+    padding: 5px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: white;
+    margin: 0 5px;
+}
+
+.btn-accion.editar {
+    background-color: #007bff;
+}
+
+.btn-accion.editar:hover {
+    background-color: #0056b3;
+}
+
+.tabla-estudiantes-contenedor {
+    margin-bottom: 30px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.tabla-estudiantes-contenedor h3 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+</style>
 {% endblock %} 

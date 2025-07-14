@@ -2,10 +2,11 @@ from flask import render_template, redirect, url_for, flash, request
 from modulos.profesores import bp
 from modulos import db
 from modulos.profesores.models import Profesor
-from modulos.control_academico.models import Materia, Corte, Inscripcion, Nota, Programa
+from modulos.control_academico.models import Materia, Corte, Inscripcion, Nota, Programa, AsignacionMateria
 from modulos.estudiantes.models import Estudiante
 from sqlalchemy.exc import IntegrityError
 from modulos.central.models import Persona
+from datetime import datetime
 
 @bp.route('/')
 def index():
@@ -139,52 +140,92 @@ def eliminar_profesor(cedula):
 @bp.route('/profesores/<cedula>/materias')
 def materias_profesor(cedula):
     profesor = Profesor.query.get_or_404(cedula)
-    # Obtener materias asignadas al profesor
-    materias = Materia.query.filter_by(profesor_id=cedula).all()
-    # Obtener todas las materias que no están asignadas a este profesor
-    materias_sin_profesor = Materia.query.filter(
-        (Materia.profesor_id.is_(None)) | 
-        (Materia.profesor_id != cedula)
-    ).all()
+    
+    # Obtener asignaciones del profesor
+    asignaciones = AsignacionMateria.query.filter_by(profesor_id=cedula).all()
+    
+    # Obtener todas las materias disponibles
+    materias = Materia.query.all()
+    
+    # Obtener todos los cortes disponibles
+    cortes = Corte.query.all()
+    
     return render_template('profesores/materias.html', 
                          profesor=profesor, 
-                         materias=materias, 
-                         materias_sin_profesor=materias_sin_profesor)
+                         asignaciones=asignaciones,
+                         materias=materias,
+                         cortes=cortes)
 
-@bp.route('/profesores/<cedula>/materias/<codigo>/asignar')
-def asignar_materia_existente(cedula, codigo):
+@bp.route('/profesores/<cedula>/materias/asignar', methods=['GET', 'POST'])
+def asignar_materia(cedula):
     profesor = Profesor.query.get_or_404(cedula)
-    materia = Materia.query.get_or_404(codigo)
     
-    # Verificar si la materia ya está asignada a este profesor
-    if materia.profesor_id == cedula:
-        flash('Ya tienes asignada esta materia', 'error')
+    if request.method == 'POST':
+        materia_codigo = request.form.get('materia_codigo')
+        corte_id = request.form.get('corte_id')
+        
+        if not materia_codigo or not corte_id:
+            flash('Debe seleccionar una materia y un corte', 'error')
+            return redirect(url_for('profesores.materias_profesor', cedula=cedula))
+        
+        # Verificar si ya existe una asignación para esta materia-corte
+        asignacion_existente = AsignacionMateria.query.filter_by(
+            materia_codigo=materia_codigo,
+            corte_id=corte_id
+        ).first()
+        
+        if asignacion_existente:
+            flash('Esta materia ya está asignada a otro profesor en este corte', 'error')
+            return redirect(url_for('profesores.materias_profesor', cedula=cedula))
+        
+        # Verificar si el profesor ya tiene esta materia asignada
+        asignacion_profesor = AsignacionMateria.query.filter_by(
+            profesor_id=cedula,
+            materia_codigo=materia_codigo,
+            corte_id=corte_id
+        ).first()
+        
+        if asignacion_profesor:
+            flash('Ya tienes asignada esta materia en este corte', 'error')
+            return redirect(url_for('profesores.materias_profesor', cedula=cedula))
+        
+        try:
+            nueva_asignacion = AsignacionMateria(
+                profesor_id=cedula,
+                materia_codigo=materia_codigo,
+                corte_id=corte_id
+            )
+            db.session.add(nueva_asignacion)
+            db.session.commit()
+            flash('Materia asignada exitosamente', 'success')
+        except IntegrityError:
+            db.session.rollback()
+            flash('Error: Ya existe una asignación para esta combinación de materia y corte', 'error')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al asignar la materia: {str(e)}', 'error')
+        
         return redirect(url_for('profesores.materias_profesor', cedula=cedula))
     
-    # Asignar la materia al profesor
-    materia.profesor_id = cedula
-    try:
-        db.session.commit()
-        flash('Materia asignada exitosamente', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error al asignar la materia: {str(e)}', 'error')
-    
-    return redirect(url_for('profesores.materias_profesor', cedula=cedula))
+    materias = Materia.query.all()
+    cortes = Corte.query.all()
+    return render_template('profesores/asignar_materia.html', 
+                         profesor=profesor, 
+                         materias=materias, 
+                         cortes=cortes)
 
-@bp.route('/profesores/<cedula>/materias/<codigo>/desasignar')
-def desasignar_materia(cedula, codigo):
+@bp.route('/profesores/<cedula>/materias/<int:asignacion_id>/desasignar')
+def desasignar_materia(cedula, asignacion_id):
     profesor = Profesor.query.get_or_404(cedula)
-    materia = Materia.query.get_or_404(codigo)
+    asignacion = AsignacionMateria.query.get_or_404(asignacion_id)
     
-    # Verificar que la materia pertenece al profesor
-    if materia.profesor_id != cedula:
+    # Verificar que la asignación pertenece al profesor
+    if asignacion.profesor_id != cedula:
         flash('No tiene permiso para desasignar esta materia', 'error')
         return redirect(url_for('profesores.materias_profesor', cedula=cedula))
     
     try:
-        # Desasignar la materia (establecer profesor a None)
-        materia.profesor_id = None
+        db.session.delete(asignacion)
         db.session.commit()
         flash('Materia desasignada exitosamente', 'success')
     except Exception as e:
@@ -199,104 +240,98 @@ def eliminar_materia(cedula, codigo):
     materia = Materia.query.get_or_404(codigo)
     
     # Verificar que la materia pertenece al profesor
-    if materia.profesor_id != cedula:
+    asignacion = AsignacionMateria.query.filter_by(
+        profesor_id=cedula,
+        materia_codigo=codigo
+    ).first()
+    
+    if not asignacion:
         flash('No tiene permiso para eliminar esta materia', 'error')
         return redirect(url_for('profesores.materias_profesor', cedula=cedula))
     
     try:
-        # Eliminar los cortes asociados primero
-        Corte.query.filter_by(materia_codigo=codigo).delete()
-        # Eliminar la materia
-        db.session.delete(materia)
+        # Eliminar la asignación
+        db.session.delete(asignacion)
         db.session.commit()
         flash('Materia eliminada exitosamente', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al eliminar la materia: {str(e)}', 'error')
     
-    return redirect(url_for('profesores.materias_profesor', cedula=cedula)) 
+    return redirect(url_for('profesores.materias_profesor', cedula=cedula))
 
 @bp.route('/profesores/<cedula>/notas')
 def notas_profesor(cedula):
     profesor = Profesor.query.get_or_404(cedula)
-    # Obtener todas las materias del profesor
-    materias_profesor = Materia.query.filter_by(profesor_id=cedula).all()
-    estudiantes_con_notas = []
-    for materia in materias_profesor:
-        # Buscar programas que contienen esta materia
-        programas_con_materia = Programa.query.join(Materia).filter(Materia.codigo == materia.codigo).all()
-        for programa in programas_con_materia:
-            # Buscar cortes de este programa
-            cortes_programa = Corte.query.filter_by(programa_id=programa.id).all()
-            for corte in cortes_programa:
-                # Buscar inscripciones en este corte
-                inscripciones = Inscripcion.query.filter_by(corte_id=corte.id).all()
-                for inscripcion in inscripciones:
-                    estudiante = Estudiante.query.get(inscripcion.estudiante_id)
-                    if estudiante:
-                        # Buscar si ya existe una nota para este estudiante y materia
-                        nota_existente = Nota.query.filter_by(
-                            estudiante_id=estudiante.cedula,
-                            materia_codigo=materia.codigo
-                        ).first()
-                        estudiantes_con_notas.append({
-                            'estudiante': estudiante,
-                            'materia': materia,
-                            'corte': corte,
-                            'programa': programa,
-                            'inscripcion': inscripcion,
-                            'nota': nota_existente
-                        })
+    
+    # Obtener las asignaciones del profesor
+    asignaciones = AsignacionMateria.query.filter_by(profesor_id=cedula).all()
+    
+    # Obtener todas las notas de las materias asignadas al profesor
+    notas = []
+    for asignacion in asignaciones:
+        notas_materia = Nota.query.filter_by(materia_codigo=asignacion.materia_codigo).all()
+        notas.extend(notas_materia)
+    
     return render_template('profesores/notas.html', 
                          profesor=profesor, 
-                         estudiantes_con_notas=estudiantes_con_notas)
+                         notas=notas,
+                         asignaciones=asignaciones)
 
 @bp.route('/profesores/<cedula>/notas/<estudiante_cedula>/<materia_codigo>', methods=['GET', 'POST'])
 def editar_nota(cedula, estudiante_cedula, materia_codigo):
     profesor = Profesor.query.get_or_404(cedula)
     estudiante = Estudiante.query.get_or_404(estudiante_cedula)
     materia = Materia.query.get_or_404(materia_codigo)
-    # Verificar que la materia pertenece al profesor
-    if materia.profesor_id != cedula:
+    
+    # Verificar que el profesor tiene asignada esta materia
+    asignacion = AsignacionMateria.query.filter_by(
+        profesor_id=cedula,
+        materia_codigo=materia_codigo
+    ).first()
+    
+    if not asignacion:
         flash('No tiene permiso para editar notas de esta materia', 'error')
         return redirect(url_for('profesores.notas_profesor', cedula=cedula))
-    if request.method == 'POST':
-        try:
-            nota_valor = float(request.form['nota'])
-            if nota_valor < 0 or nota_valor > 100:
-                flash('La nota debe estar entre 0 y 100', 'error')
-                return render_template('profesores/editar_nota.html', 
-                                    profesor=profesor, 
-                                    estudiante=estudiante, 
-                                    materia=materia)
-            nota = Nota.query.filter_by(
-                estudiante_id=estudiante_cedula,
-                materia_codigo=materia_codigo
-            ).first()
-            if nota:
-                nota.nota = nota_valor
-                flash('Nota actualizada exitosamente', 'success')
-            else:
-                nota = Nota(
-                    estudiante_id=estudiante_cedula,
-                    materia_codigo=materia_codigo,
-                    nota=nota_valor
-                )
-                db.session.add(nota)
-                flash('Nota registrada exitosamente', 'success')
-            db.session.commit()
-            return redirect(url_for('profesores.notas_profesor', cedula=cedula))
-        except ValueError:
-            flash('La nota debe ser un número válido', 'error')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error al guardar la nota: {str(e)}', 'error')
-    nota_existente = Nota.query.filter_by(
+    
+    # Buscar la nota existente o crear una nueva
+    nota = Nota.query.filter_by(
         estudiante_id=estudiante_cedula,
         materia_codigo=materia_codigo
     ).first()
+    
+    if request.method == 'POST':
+        nueva_nota = float(request.form['nota'])
+        
+        if nueva_nota < 0 or nueva_nota > 20:
+            flash('La nota debe estar entre 0 y 20', 'error')
+            return render_template('profesores/editar_nota.html', 
+                                profesor=profesor, 
+                                estudiante=estudiante, 
+                                materia=materia, 
+                                nota=nota)
+        
+        try:
+            if nota:
+                nota.nota = nueva_nota
+                nota.fecha_registro = datetime.utcnow()
+            else:
+                nueva_nota_obj = Nota(
+                    estudiante_id=estudiante_cedula,
+                    materia_codigo=materia_codigo,
+                    nota=nueva_nota
+                )
+                db.session.add(nueva_nota_obj)
+            
+            db.session.commit()
+            flash('Nota actualizada exitosamente', 'success')
+            return redirect(url_for('profesores.notas_profesor', cedula=cedula))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar la nota: {str(e)}', 'error')
+    
     return render_template('profesores/editar_nota.html', 
                          profesor=profesor, 
                          estudiante=estudiante, 
-                         materia=materia,
-                         nota_existente=nota_existente) 
+                         materia=materia, 
+                         nota=nota) 

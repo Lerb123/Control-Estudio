@@ -1,5 +1,5 @@
 from modulos.central.models import Persona
-from modulos.control_academico.models import Materia
+from modulos.control_academico.models import AsignacionMateria
 from modulos import db
 
 class Profesor(Persona):
@@ -8,8 +8,8 @@ class Profesor(Persona):
     cedula = db.Column(db.String(20), db.ForeignKey('personas.cedula'), primary_key=True)
     titulo = db.Column(db.String(100), nullable=False)
 
-    # Relación con materias
-    materias = db.relationship('Materia', back_populates='profesor')
+    # Relación con asignaciones de materias
+    asignaciones = db.relationship('AsignacionMateria', back_populates='profesor')
 
     __mapper_args__ = {
         'polymorphic_identity': 'profesor',

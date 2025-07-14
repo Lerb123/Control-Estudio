@@ -42,18 +42,16 @@ class Materia(db.Model):
     codigo = db.Column(db.Integer, primary_key=True, unique=True)
     nombre = db.Column(db.String(100), nullable=False)
     programa_id = db.Column(db.Integer, db.ForeignKey('programas.id'), nullable=False)
-    profesor_id = db.Column(db.String(20), db.ForeignKey('profesores.cedula'), nullable=True)
     
     # Relaciones
     programa = db.relationship('Programa', back_populates='materias')
-    profesor = db.relationship('Profesor', back_populates='materias')
+    asignaciones = db.relationship('AsignacionMateria', back_populates='materia')
     notas = db.relationship('Nota', back_populates='materia')
     
-    def __init__(self, codigo, nombre, programa_id, profesor_id=None):
+    def __init__(self, codigo, nombre, programa_id):
         self.codigo = codigo
         self.nombre = nombre
         self.programa_id = programa_id
-        self.profesor_id = profesor_id
     
     def __repr__(self):
         return f'<Materia {self.codigo} - {self.nombre}>'
@@ -71,6 +69,7 @@ class Corte(db.Model):
     # Relaciones
     programa = db.relationship('Programa', back_populates='cortes')
     inscripciones = db.relationship('Inscripcion', back_populates='corte')
+    asignaciones = db.relationship('AsignacionMateria', back_populates='corte')
     
     def __init__(self, programa_id, seccion, zona, fecha_inicio, fecha_fin):
         self.programa_id = programa_id
@@ -81,6 +80,33 @@ class Corte(db.Model):
     
     def __repr__(self):
         return f'<Corte {self.seccion} - {self.zona} - {self.programa.nombre} - {self.fecha_inicio} - {self.fecha_fin}>'
+
+class AsignacionMateria(db.Model):
+    __tablename__ = 'asignaciones_materias'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    profesor_id = db.Column(db.String(20), db.ForeignKey('profesores.cedula'), nullable=False)
+    materia_codigo = db.Column(db.Integer, db.ForeignKey('materias.codigo'), nullable=False)
+    corte_id = db.Column(db.Integer, db.ForeignKey('cortes.id'), nullable=False)
+    fecha_asignacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relaciones
+    profesor = db.relationship('Profesor', back_populates='asignaciones')
+    materia = db.relationship('Materia', back_populates='asignaciones')
+    corte = db.relationship('Corte', back_populates='asignaciones')
+    
+    # Restricción única: un profesor solo puede ser asignado a una combinación única de corte-materia
+    __table_args__ = (
+        db.UniqueConstraint('materia_codigo', 'corte_id', name='uq_materia_corte'),
+    )
+    
+    def __init__(self, profesor_id, materia_codigo, corte_id):
+        self.profesor_id = profesor_id
+        self.materia_codigo = materia_codigo
+        self.corte_id = corte_id
+    
+    def __repr__(self):
+        return f'<AsignacionMateria Profesor: {self.profesor_id} - Materia: {self.materia_codigo} - Corte: {self.corte_id}>'
 
 class Inscripcion(db.Model):
     __tablename__ = 'inscripciones'

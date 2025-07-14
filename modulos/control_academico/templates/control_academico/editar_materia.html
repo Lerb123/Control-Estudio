@@ -37,17 +37,6 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
-                <label for="profesor_id">Profesor (Opcional):</label>
-                <select name="profesor_id" id="profesor_id">
-                    <option value="">Sin profesor asignado</option>
-                    {% for profesor in profesores %}
-                        <option value="{{ profesor.cedula }}" {% if profesor.cedula == materia.profesor_id %}selected{% endif %}>
-                            {{ profesor.nombre }} {{ profesor.apellido }} - {{ profesor.cedula }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
             <button type="submit" class="btn-nuevo-estudiante">Actualizar Materia</button>
             <a href="{{ url_for('control_academico.listar_materias') }}" class="btn-nuevo-estudiante" style="background-color: #6c757d;">Cancelar</a>
         </form>

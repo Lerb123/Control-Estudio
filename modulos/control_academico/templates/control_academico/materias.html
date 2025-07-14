@@ -37,15 +37,6 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
-                <label for="profesor_id">Profesor (Opcional):</label>
-                <select name="profesor_id" id="profesor_id">
-                    <option value="">Sin profesor asignado</option>
-                    {% for profesor in profesores %}
-                        <option value="{{ profesor.cedula }}">{{ profesor.nombre }} {{ profesor.apellido }} - {{ profesor.cedula }}</option>
-                    {% endfor %}
-                </select>
-            </div>
             <button type="submit" class="btn-nuevo-estudiante">Crear Materia</button>
         </form>
     </div>
@@ -60,7 +51,7 @@
                         <th>Código</th>
                         <th>Nombre</th>
                         <th>Programa</th>
-                        <th>Profesor</th>
+                        <th>Asignaciones</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -70,7 +61,21 @@
                         <td>{{ materia.codigo }}</td>
                         <td>{{ materia.nombre }}</td>
                         <td>{{ materia.programa.nombre }} - {{ materia.programa.carrera.nombre }}</td>
-                        <td>{{ materia.profesor.nombre if materia.profesor else 'Sin profesor asignado' }}</td>
+                        <td>
+                            {% set materia_asignaciones = asignaciones|selectattr("materia_codigo", "equalto", materia.codigo)|list %}
+                            {% if materia_asignaciones %}
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    {% for asignacion in materia_asignaciones %}
+                                    <li style="margin-bottom: 5px;">
+                                        <strong>{{ asignacion.profesor.nombre }} {{ asignacion.profesor.apellido }}</strong><br>
+                                        <small>Corte: {{ asignacion.corte.seccion }} - {{ asignacion.corte.zona }}</small>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Sin asignaciones</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <a href="{{ url_for('control_academico.editar_materia', codigo=materia.codigo) }}" 
                                class="btn-accion editar">Editar</a>

@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from modulos.control_academico import bp
 from modulos import db
 from modulos.control_academico.models import (
-    Carrera, Programa, Materia, Corte, Inscripcion, Nota
+    Carrera, Programa, Materia, Corte, Inscripcion, Nota, AsignacionMateria
 )
 from modulos.profesores.models import Profesor
 from modulos.estudiantes.models import Estudiante
@@ -181,8 +181,10 @@ def listar_materias():
     materias = Materia.query.all()
     profesores = Profesor.query.all()
     programas = Programa.query.all()
+    # Obtener asignaciones para mostrar qué profesor tiene asignada cada materia
+    asignaciones = AsignacionMateria.query.all()
     return render_template('control_academico/materias.html', 
-                         materias=materias, profesores=profesores, programas=programas)
+                         materias=materias, profesores=profesores, programas=programas, asignaciones=asignaciones)
 
 @bp.route('/materias/crear', methods=['GET', 'POST'])
 def crear_materia():
@@ -191,7 +193,6 @@ def crear_materia():
         codigo = request.form['codigo']
         nombre = request.form['nombre']
         programa_id = request.form['programa_id']
-        profesor_id = request.form.get('profesor_id') or None
         
         # Verificar si la materia ya existe
         materia_existente = Materia.query.filter_by(codigo=codigo).first()
@@ -203,8 +204,7 @@ def crear_materia():
             nueva_materia = Materia(
                 codigo=codigo,
                 nombre=nombre,
-                programa_id=programa_id,
-                profesor_id=profesor_id
+                programa_id=programa_id
             )
             db.session.add(nueva_materia)
             db.session.commit()
@@ -214,10 +214,9 @@ def crear_materia():
             db.session.rollback()
             flash(f'Error al crear la materia: {str(e)}', 'error')
     
-    profesores = Profesor.query.all()
     programas = Programa.query.all()
     return render_template('control_academico/crear_materia.html', 
-                         profesores=profesores, programas=programas)
+                         programas=programas)
 
 @bp.route('/materias/editar/<int:codigo>', methods=['GET', 'POST'])
 def editar_materia(codigo):
@@ -227,12 +226,10 @@ def editar_materia(codigo):
     if request.method == 'POST':
         nombre = request.form['nombre']
         programa_id = request.form['programa_id']
-        profesor_id = request.form.get('profesor_id') or None
         
         try:
             materia.nombre = nombre
             materia.programa_id = programa_id
-            materia.profesor_id = profesor_id
             db.session.commit()
             flash('Materia actualizada exitosamente', 'success')
             return redirect(url_for('control_academico.listar_materias'))
@@ -240,10 +237,9 @@ def editar_materia(codigo):
             db.session.rollback()
             flash(f'Error al actualizar la materia: {str(e)}', 'error')
     
-    profesores = Profesor.query.all()
     programas = Programa.query.all()
     return render_template('control_academico/editar_materia.html', 
-                         materia=materia, profesores=profesores, programas=programas)
+                         materia=materia, programas=programas)
 
 @bp.route('/materias/eliminar/<int:codigo>')
 def eliminar_materia(codigo):
