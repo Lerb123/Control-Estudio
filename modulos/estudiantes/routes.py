@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from modulos.estudiantes import bp
 from modulos import db
 from modulos.estudiantes.models import Estudiante
-from modulos.control_academico.models import Materia, Corte, Inscripcion
+from modulos.control_academico.models import Materia, Corte, Inscripcion, Carrera
 from datetime import datetime
 
 @bp.route('/')
@@ -12,6 +12,9 @@ def index():
 
 @bp.route('/registro_estudiantes',methods =['GET','POST'])
 def nuevo_estudiante():
+    # Obtener todas las carreras disponibles
+    carreras = Carrera.query.all()
+    
     if request.method == 'POST':
         nombre = request.form['nombre']
         apellido = request.form['apellido']
@@ -19,7 +22,7 @@ def nuevo_estudiante():
         numero_telefono = request.form['telefono']
         correo_electronico = request.form['correo']
         usuario = request.form['usuario']
-        carrera = request.form['carrera']
+        carrera_id = request.form['carrera']
         solvente = bool(request.form.get('solvente', False))
         contrasenia = cedula
         rol = 'estudiante'
@@ -27,39 +30,43 @@ def nuevo_estudiante():
         # Validación de cédula
         if not cedula.isdigit() or len(cedula) < 8:
             flash('La cédula debe contener al menos 8 dígitos y solo números.', 'error')
-            return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera)
+            return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera_id, carreras=carreras)
 
         if Estudiante.query.filter_by(cedula=cedula).first():
             flash('Ya existe un estudiante con esa cédula.', 'error')
-            return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera)
+            return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera_id, carreras=carreras)
         if Estudiante.query.filter_by(usuario=usuario).first():
             flash('Ya existe un estudiante con ese nombre de usuario.', 'error')
-            return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera)
+            return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera_id, carreras=carreras)
         if Estudiante.query.filter_by(correo_electronico=correo_electronico).first():
             flash('Ya existe un estudiante con ese correo electrónico.', 'error')
-            return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera)
+            return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera_id, carreras=carreras)
 
-        estudiante = Estudiante(cedula, nombre, apellido, numero_telefono, correo_electronico, usuario, contrasenia, rol, carrera, solvente)
+        estudiante = Estudiante(cedula, nombre, apellido, numero_telefono, correo_electronico, usuario, contrasenia, rol, carrera_id, solvente)
         db.session.add(estudiante)
         db.session.commit()
 
         flash('Estudiate registrado exitosamente', 'success')
         return redirect(url_for('estudiantes.index'))
     
-    return render_template('estudiantes/form_estudiante.html')
+    return render_template('estudiantes/form_estudiante.html', carreras=carreras)
 
 @bp.route('/editar/<cedula>', methods=['GET', 'POST'])
 def editar_estudiante(cedula):
     estudiante = Estudiante.query.get_or_404(cedula)
+    # Obtener todas las carreras disponibles
+    carreras = Carrera.query.all()
+    
     if request.method == 'POST':
         nueva_cedula = request.form['cedula']
         nuevo_usuario = request.form['usuario']
         nuevo_correo = request.form['correo']
+        carrera_id = request.form['carrera']
 
         # Verificar unicidad de cédula (si cambió)
         if nueva_cedula != estudiante.cedula and Estudiante.query.filter_by(cedula=nueva_cedula).first():
             flash('Ya existe un estudiante con esa cédula.', 'error')
-            return render_template('estudiantes/form_estudiante.html', estudiante=estudiante)
+            return render_template('estudiantes/form_estudiante.html', estudiante=estudiante, carreras=carreras)
 
         # Verificar unicidad de usuario (excluyendo el actual)
         usuario_existente = Estudiante.query.filter(
@@ -68,7 +75,7 @@ def editar_estudiante(cedula):
         ).first()
         if usuario_existente:
             flash('Ya existe un estudiante con ese nombre de usuario.', 'error')
-            return render_template('estudiantes/form_estudiante.html', estudiante=estudiante)
+            return render_template('estudiantes/form_estudiante.html', estudiante=estudiante, carreras=carreras)
 
         # Verificar unicidad de correo (excluyendo el actual)
         correo_existente = Estudiante.query.filter(
@@ -77,7 +84,7 @@ def editar_estudiante(cedula):
         ).first()
         if correo_existente:
             flash('Ya existe un estudiante con ese correo electrónico.', 'error')
-            return render_template('estudiantes/form_estudiante.html', estudiante=estudiante)
+            return render_template('estudiantes/form_estudiante.html', estudiante=estudiante, carreras=carreras)
 
         # Si la cédula cambió, crear nuevo registro y borrar el anterior
         if nueva_cedula != estudiante.cedula:
@@ -94,7 +101,7 @@ def editar_estudiante(cedula):
                 usuario=nuevo_usuario,
                 contrasenia=nueva_cedula,
                 rol='estudiante',
-                carrera=request.form['carrera'],
+                carrera_id=carrera_id,
                 solvente=getattr(estudiante, 'solvente', True)
             )
             db.session.add(nuevo_estudiante)
@@ -110,12 +117,12 @@ def editar_estudiante(cedula):
         estudiante.usuario = nuevo_usuario
         estudiante.contrasenia = estudiante.cedula
         estudiante.rol = 'estudiante'
-        estudiante.carrera = request.form['carrera']
+        estudiante.carrera_id = carrera_id
         db.session.commit()
         flash('Estudiante actualizado exitosamente', 'success')
         return redirect(url_for('estudiantes.index'))
 
-    return render_template('estudiantes/form_estudiante.html', estudiante=estudiante)
+    return render_template('estudiantes/form_estudiante.html', estudiante=estudiante, carreras=carreras)
 
 @bp.route('/elimnar/<cedula>')
 def eliminar_estudiante(cedula):
@@ -134,67 +141,43 @@ def inscripciones(cedula):
     estudiante = Estudiante.query.get_or_404(cedula)
     if request.method == 'POST':
         try:
-            #datos de la inscripcion 
-            datosMateria = request.form['materia']
+            corte_id = request.form['corte']
             
-            partes = datosMateria.split('-')
-            if len(partes) != 6:
-                flash('Error en el formato de los datos de la materia', 'error')
-                return redirect(url_for('estudiantes.inscripciones', cedula=estudiante.cedula))
+            # Verificar si el estudiante ya está inscrito en este corte
+            inscripcion_existente = Inscripcion.query.filter_by(
+                estudiante_id=estudiante.cedula, 
+                corte_id=corte_id
+            ).first()
             
-            codigo_corte = partes[0].strip()
-            seccion = partes[1].strip()
-            periodo = partes[2].strip()
-            nombre = partes[3].strip()
-            codigo_materia = partes[4].strip()
-            profesor = partes[5].strip()
-
-            # Verificar si la materia ya existe
-            materia_existente = Materia.query.filter_by(codigo=codigo_materia).first()
-            if not materia_existente:
-                #creacion de materia 
-                materia = Materia(codigo=codigo_materia, nombre=nombre, profesor=profesor)
-                db.session.add(materia)
-            
-            # Verificar si el corte ya existe
-            corte_existente = Corte.query.filter_by(id=codigo_corte, seccion=seccion, periodo=periodo).first()
-            if not corte_existente:    
-                #creacion de corte 
-                corte = Corte(id=codigo_corte, materia_codigo=codigo_materia, seccion=seccion, periodo=periodo)
-                db.session.add(corte)
-
-            #verifiacr si estudiante ya esta inscrito 
-            estudiante_inscrito =  Inscripcion.query.filter_by(estudiante_cedula=estudiante.cedula, corte_id=codigo_corte).first()
-            if not estudiante_inscrito:
+            if inscripcion_existente:
+                flash('Ya estás inscrito en este corte', 'warning')
+            else:
+                # Crear nueva inscripción
                 inscripcion = Inscripcion(
-                    estudiante_cedula=estudiante.cedula,
-                    materia_codigo=codigo_materia,
-                    corte_id=codigo_corte,
-                    nota=None, 
-                    fecha_inscripcion=datetime.now()
+                    estudiante_id=estudiante.cedula,
+                    corte_id=corte_id,
+                    estado_pago=False
                 )
                 db.session.add(inscripcion)
+                db.session.commit()
                 flash('Inscripción exitosa', 'success')
-            else:
-                flash('Ya estás inscrito en este corte', 'warning')
-
-            db.session.commit()
+                
         except Exception as e:
             db.session.rollback()
             flash(f'Error al procesar la inscripción: {str(e)}', 'error')
         
         return redirect(url_for('estudiantes.inscripciones', cedula=estudiante.cedula))
     
-    # Obtén todas las inscripciones del estudiante, junto con materia y corte
-    inscripciones = Inscripcion.query.filter_by(estudiante_cedula=estudiante.cedula).all()
+    # Obtener todas las inscripciones del estudiante
+    inscripciones = Inscripcion.query.filter_by(estudiante_id=estudiante.cedula).all()
     
-    # Obtener todas las materias que tienen profesor asignado
-    materias_disponibles = Materia.query.filter(Materia.profesor.isnot(None)).all()
+    # Obtener todos los cortes disponibles
+    cortes_disponibles = Corte.query.all()
     
     return render_template('estudiantes/inscripciones.html',
                          estudiante=estudiante, 
                          inscripciones=inscripciones,
-                         materias_disponibles=materias_disponibles)
+                         cortes_disponibles=cortes_disponibles)
 
 @bp.route('/eliminar_inscripcion/<int:inscripcion_id>')
 def eliminar_inscripcion(inscripcion_id):
@@ -206,5 +189,5 @@ def eliminar_inscripcion(inscripcion_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error al eliminar inscripción: {str(e)}', 'danger')
-    return redirect(url_for('estudiantes.inscripciones', cedula=inscripcion.estudiante_cedula))
+    return redirect(url_for('estudiantes.inscripciones', cedula=inscripcion.estudiante_id))
 

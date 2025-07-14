@@ -17,17 +17,17 @@
 <form action="{{ url_for('estudiantes.inscripciones', cedula=estudiante.cedula) }}" method="POST">
     <input type="hidden" name="cedula" value="{{ estudiante.cedula }}">
     <div class="form-group">
-        <label for="materia">Seleccione una Materia:</label>
-        <select name="materia" id="materia" required>
-            <option value="" disabled selected>Seleccione una Materia</option>
-            {% for materia in materias_disponibles %}
-                <option value="{{ materia.codigo }}-01-2024-{{ materia.nombre }}-{{ materia.codigo }}-{{ materia.profesor }}">
-                    {{ materia.nombre }} - {{ materia.codigo }} - Prof: {{ materia.profesor }}
+        <label for="corte">Seleccione un Corte:</label>
+        <select name="corte" id="corte" required>
+            <option value="" disabled selected>Seleccione un Corte</option>
+            {% for corte in cortes_disponibles %}
+                <option value="{{ corte.id }}">
+                    Corte {{ corte.id }} - {{ corte.programa.nombre }} - Sección: {{ corte.seccion }} - Zona: {{ corte.zona }}
                 </option>
             {% endfor %}
         </select>
     </div>
-    <button type="submit" class="btn-form-estudiante">Inscribir Materia</button>
+    <button type="submit" class="btn-form-estudiante">Inscribir en Corte</button>
 </form>
 
 <div class="tabla-estudiantes-contenedor">
@@ -35,14 +35,14 @@
         <table class="tabla-estudiantes">
             <thead>
                 <tr>
-                    <th>Corte</th>
+                    <th>ID Corte</th>
+                    <th>Programa</th>
                     <th>Sección</th>
-                    <th>Periodo</th>
-                    <th>Materia</th>
-                    <th>Código</th>
-                    <th>Profesor</th>
+                    <th>Zona</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
                     <th>Fecha Inscripción</th>
-                    <th>Nota</th>
+                    <th>Estado Pago</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -50,15 +50,15 @@
                 {% for inscripcion in inscripciones %}
                     <tr>
                         <td>{{ inscripcion.corte.id }}</td>
+                        <td>{{ inscripcion.corte.programa.nombre }}</td>
                         <td>{{ inscripcion.corte.seccion }}</td>
-                        <td>{{ inscripcion.corte.periodo }}</td>
-                        <td>{{ inscripcion.materia.nombre }}</td>
-                        <td>{{ inscripcion.materia.codigo }}</td>
-                        <td>{{ inscripcion.materia.profesor or 'Sin profesor asignado' }}</td>
+                        <td>{{ inscripcion.corte.zona }}</td>
+                        <td>{{ inscripcion.corte.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ inscripcion.corte.fecha_fin.strftime('%d/%m/%Y') }}</td>
                         <td>{{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ inscripcion.nota or 'Pendiente' }}</td>
+                        <td>{{ 'Pagado' if inscripcion.estado_pago else 'Pendiente' }}</td>
                         <td>
-                            <a href="{{ url_for('estudiantes.eliminar_inscripcion', cedula=estudiante.cedula, inscripcion_id=inscripcion.id) }}" 
+                            <a href="{{ url_for('estudiantes.eliminar_inscripcion', inscripcion_id=inscripcion.id) }}" 
                                class="btn-accion eliminar"
                                onclick="return confirm('¿Está seguro de eliminar esta inscripción?')">Eliminar</a>
                         </td>

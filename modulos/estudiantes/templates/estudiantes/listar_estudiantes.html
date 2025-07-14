@@ -7,7 +7,6 @@ Lista de Estudiantes
 {% block content %}
 
 {% with messages = get_flashed_messages()%}
-    
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-info">
@@ -33,8 +32,6 @@ Lista de Estudiantes
                     <th>Cédula</th>
                     <th>Teléfono</th>
                     <th>Email</th>
-                    <th>Usuario</th>
-                    <th>Contraseña</th>
                     <th>Carrera</th>
                     <th>Acciones</th>
                 </tr>
@@ -47,13 +44,11 @@ Lista de Estudiantes
                     <td>{{ estudiante.cedula }}</td>
                     <td>{{ estudiante.numero_telefono }}</td>
                     <td>{{ estudiante.correo_electronico }}</td>
-                    <td>{{ estudiante.usuario }}</td>
-                    <td>{{ estudiante.contrasenia }}</td>
-                    <td>{{ estudiante.carrera }}</td>
+                    <td>{{ estudiante.carrera.nombre }}</td>
                     <td>
                         <a href="{{ url_for('estudiantes.editar_estudiante', cedula=estudiante.cedula) }}" class="btn-accion editar">Editar</a> |
                         <a href="{{ url_for('estudiantes.eliminar_estudiante', cedula=estudiante.cedula) }}" class="btn-accion eliminar">Eliminar</a> |
-                        <a href="{{ url_for('estudiantes.inscripciones', cedula=estudiante.cedula) }}" class="btn-accion eliminar">Materias</a>
+                        <a href="{{ url_for('estudiantes.inscripciones', cedula=estudiante.cedula) }}" class="btn-accion eliminar">Inscripciones</a>
                     </td>
                 </tr>
                 {% endfor %}

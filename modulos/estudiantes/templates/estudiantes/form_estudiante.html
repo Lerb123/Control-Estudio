@@ -48,10 +48,13 @@
         <div class="form-col">
             <label for="carrera">Carrera</label>
             <select id="carrera" name="carrera" required>
-                <option value="" disabled {% if not (estudiante and estudiante.carrera) and not carrera %}selected{% endif %}>Seleccione una Carrera</option>
-                <option value="Ingeniería de Sistemas" {% if (estudiante and estudiante.carrera == 'Ingeniería de Sistemas') or carrera == 'Ingeniería de Sistemas' %}selected{% endif %}>Ingeniería de Sistemas</option>
-                <option value="Ingeniería Industrial" {% if (estudiante and estudiante.carrera == 'Ingeniería Industrial') or carrera == 'Ingeniería Industrial' %}selected{% endif %}>Ingeniería Industrial</option>
-                <option value="Ingeniería Civil" {% if (estudiante and estudiante.carrera == 'Ingeniería Civil') or carrera == 'Ingeniería Civil' %}selected{% endif %}>Ingeniería Civil</option>
+                <option value="" disabled {% if not (estudiante and estudiante.carrera_id) and not carrera %}selected{% endif %}>Seleccione una Carrera</option>
+                {% for carrera_option in carreras %}
+                    <option value="{{ carrera_option.id }}" 
+                            {% if (estudiante and estudiante.carrera_id == carrera_option.id) or (carrera and carrera|int == carrera_option.id) %}selected{% endif %}>
+                        {{ carrera_option.nombre }}
+                    </option>
+                {% endfor %}
             </select>
         </div>
     </div>
