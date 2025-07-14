@@ -140,11 +140,11 @@ def eliminar_profesor(cedula):
 def materias_profesor(cedula):
     profesor = Profesor.query.get_or_404(cedula)
     # Obtener materias asignadas al profesor
-    materias = Materia.query.filter_by(profesor=cedula).all()
+    materias = Materia.query.filter_by(profesor_id=cedula).all()
     # Obtener todas las materias que no están asignadas a este profesor
     materias_sin_profesor = Materia.query.filter(
-        (Materia.profesor.is_(None)) | 
-        (Materia.profesor != cedula)
+        (Materia.profesor_id.is_(None)) | 
+        (Materia.profesor_id != cedula)
     ).all()
     return render_template('profesores/materias.html', 
                          profesor=profesor, 
@@ -157,12 +157,12 @@ def asignar_materia_existente(cedula, codigo):
     materia = Materia.query.get_or_404(codigo)
     
     # Verificar si la materia ya está asignada a este profesor
-    if materia.profesor == cedula:
+    if materia.profesor_id == cedula:
         flash('Ya tienes asignada esta materia', 'error')
         return redirect(url_for('profesores.materias_profesor', cedula=cedula))
     
     # Asignar la materia al profesor
-    materia.profesor = cedula
+    materia.profesor_id = cedula
     try:
         db.session.commit()
         flash('Materia asignada exitosamente', 'success')
@@ -178,13 +178,13 @@ def desasignar_materia(cedula, codigo):
     materia = Materia.query.get_or_404(codigo)
     
     # Verificar que la materia pertenece al profesor
-    if materia.profesor != cedula:
+    if materia.profesor_id != cedula:
         flash('No tiene permiso para desasignar esta materia', 'error')
         return redirect(url_for('profesores.materias_profesor', cedula=cedula))
     
     try:
         # Desasignar la materia (establecer profesor a None)
-        materia.profesor = None
+        materia.profesor_id = None
         db.session.commit()
         flash('Materia desasignada exitosamente', 'success')
     except Exception as e:
@@ -199,7 +199,7 @@ def eliminar_materia(cedula, codigo):
     materia = Materia.query.get_or_404(codigo)
     
     # Verificar que la materia pertenece al profesor
-    if materia.profesor != cedula:
+    if materia.profesor_id != cedula:
         flash('No tiene permiso para eliminar esta materia', 'error')
         return redirect(url_for('profesores.materias_profesor', cedula=cedula))
     

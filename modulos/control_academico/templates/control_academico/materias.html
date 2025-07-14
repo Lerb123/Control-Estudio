@@ -29,8 +29,17 @@
                 <input type="text" id="nombre" name="nombre" required>
             </div>
             <div class="form-group">
-                <label for="profesor">Profesor (Opcional):</label>
-                <select name="profesor" id="profesor">
+                <label for="programa_id">Programa:</label>
+                <select name="programa_id" id="programa_id" required>
+                    <option value="">Seleccione un programa</option>
+                    {% for programa in programas %}
+                        <option value="{{ programa.id }}">{{ programa.nombre }} - {{ programa.carrera.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="profesor_id">Profesor (Opcional):</label>
+                <select name="profesor_id" id="profesor_id">
                     <option value="">Sin profesor asignado</option>
                     {% for profesor in profesores %}
                         <option value="{{ profesor.cedula }}">{{ profesor.nombre }} {{ profesor.apellido }} - {{ profesor.cedula }}</option>
@@ -50,6 +59,7 @@
                     <tr>
                         <th>Código</th>
                         <th>Nombre</th>
+                        <th>Programa</th>
                         <th>Profesor</th>
                         <th>Acciones</th>
                     </tr>
@@ -59,7 +69,8 @@
                     <tr>
                         <td>{{ materia.codigo }}</td>
                         <td>{{ materia.nombre }}</td>
-                        <td>{{ materia.profesor or 'Sin profesor asignado' }}</td>
+                        <td>{{ materia.programa.nombre }} - {{ materia.programa.carrera.nombre }}</td>
+                        <td>{{ materia.profesor.nombre if materia.profesor else 'Sin profesor asignado' }}</td>
                         <td>
                             <a href="{{ url_for('control_academico.editar_materia', codigo=materia.codigo) }}" 
                                class="btn-accion editar">Editar</a>

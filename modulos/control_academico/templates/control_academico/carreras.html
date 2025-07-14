@@ -1,0 +1,49 @@
+{% extends "central/base.html" %}
+
+{% block title %} {{super ()}} Carreras {% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+    <h1 class="titulo-estudiantes">Gestión de Carreras</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="tabla-estudiantes-contenedor">
+        <a href="{{ url_for('control_academico.crear_carrera') }}" class="btn-nuevo-estudiante">Nueva Carrera</a>
+        
+        <table class="tabla-estudiantes">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Programas</th>
+                    <th>Estudiantes</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for carrera in carreras %}
+                <tr>
+                    <td>{{ carrera.id }}</td>
+                    <td>{{ carrera.nombre }}</td>
+                    <td>{{ carrera.programas|length }}</td>
+                    <td>{{ carrera.estudiantes|length }}</td>
+                    <td>
+                        <a href="{{ url_for('control_academico.editar_carrera', id=carrera.id) }}" class="btn-accion editar">Editar</a>
+                        <a href="{{ url_for('control_academico.eliminar_carrera', id=carrera.id) }}" class="btn-accion eliminar" onclick="return confirm('¿Estás seguro de que quieres eliminar esta carrera?')">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

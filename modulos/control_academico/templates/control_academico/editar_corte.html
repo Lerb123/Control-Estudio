@@ -1,0 +1,58 @@
+{% extends "central/base.html" %}
+
+{% block title %} {{super ()}} Editar Corte {% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+    <h1 class="titulo-estudiantes">Editar Corte</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
+        <form method="POST" class="form-estudiante">
+            <div class="form-group">
+                <label for="programa_id">Programa:</label>
+                <select id="programa_id" name="programa_id" required>
+                    <option value="">Seleccione un programa</option>
+                    {% for programa in programas %}
+                        <option value="{{ programa.id }}" {% if programa.id == corte.programa_id %}selected{% endif %}>{{ programa.nombre }} - {{ programa.carrera.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="seccion">Sección:</label>
+                <input type="text" id="seccion" name="seccion" value="{{ corte.seccion }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="zona">Zona:</label>
+                <input type="text" id="zona" name="zona" value="{{ corte.zona }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="fecha_inicio">Fecha de Inicio:</label>
+                <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ corte.fecha_inicio.strftime('%Y-%m-%d') }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="fecha_fin">Fecha de Fin:</label>
+                <input type="date" id="fecha_fin" name="fecha_fin" value="{{ corte.fecha_fin.strftime('%Y-%m-%d') }}" required>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn-form-estudiante">Actualizar Corte</button>
+                <a href="{{ url_for('control_academico.listar_cortes') }}" class="btn-nuevo-estudiante" style="display: inline-block; margin-left: 10px;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

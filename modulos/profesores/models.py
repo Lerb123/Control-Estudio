@@ -9,10 +9,7 @@ class Profesor(Persona):
     titulo = db.Column(db.String(100), nullable=False)
 
     # Relación con materias
-    materias = db.relationship('Materia', 
-                             backref='profesor_info',
-                             primaryjoin="Profesor.cedula==Materia.profesor",
-                             foreign_keys=[Materia.profesor])
+    materias = db.relationship('Materia', back_populates='profesor')
 
     __mapper_args__ = {
         'polymorphic_identity': 'profesor',

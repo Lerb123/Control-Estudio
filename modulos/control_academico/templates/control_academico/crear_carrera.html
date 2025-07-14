@@ -1,0 +1,33 @@
+{% extends "central/base.html" %}
+
+{% block title %} {{super ()}} Crear Carrera {% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+    <h1 class="titulo-estudiantes">Crear Nueva Carrera</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
+        <form method="POST" class="form-estudiante">
+            <div class="form-group">
+                <label for="nombre">Nombre de la Carrera:</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn-form-estudiante">Crear Carrera</button>
+                <a href="{{ url_for('control_academico.listar_carreras') }}" class="btn-nuevo-estudiante" style="display: inline-block; margin-left: 10px;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

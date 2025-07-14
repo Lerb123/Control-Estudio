@@ -1,68 +1,125 @@
 from modulos import db
+from datetime import datetime
+
+class Carrera(db.Model):
+    __tablename__ = 'carreras'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    
+    # Relaciones
+    programas = db.relationship('Programa', back_populates='carrera')
+    estudiantes = db.relationship('Estudiante', back_populates='carrera')
+    
+    def __init__(self, nombre):
+        self.nombre = nombre
+    
+    def __repr__(self):
+        return f'<Carrera {self.nombre}>'
+
+class Programa(db.Model):
+    __tablename__ = 'programas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    carrera_id = db.Column(db.Integer, db.ForeignKey('carreras.id'), nullable=False)
+    
+    # Relaciones
+    carrera = db.relationship('Carrera', back_populates='programas')
+    materias = db.relationship('Materia', back_populates='programa')
+    cortes = db.relationship('Corte', back_populates='programa')
+    
+    def __init__(self, nombre, carrera_id):
+        self.nombre = nombre
+        self.carrera_id = carrera_id
+    
+    def __repr__(self):
+        return f'<Programa {self.nombre}>'
 
 class Materia(db.Model):
     __tablename__ ='materias'
 
-    codigo = db.Column(db.String(20), primary_key=True, unique=True)
+    codigo = db.Column(db.Integer, primary_key=True, unique=True)
     nombre = db.Column(db.String(100), nullable=False)
-    profesor = db.Column(db.String(20), db.ForeignKey('profesores.cedula'), nullable=True)
-
+    programa_id = db.Column(db.Integer, db.ForeignKey('programas.id'), nullable=False)
+    profesor_id = db.Column(db.String(20), db.ForeignKey('profesores.cedula'), nullable=True)
+    
     # Relaciones
-    inscripciones = db.relationship('Inscripcion', back_populates='materia')
-    cortes = db.relationship('Corte', back_populates='materia')
-
-    def __init__(self, codigo, nombre, profesor=None):
+    programa = db.relationship('Programa', back_populates='materias')
+    profesor = db.relationship('Profesor', back_populates='materias')
+    notas = db.relationship('Nota', back_populates='materia')
+    
+    def __init__(self, codigo, nombre, programa_id, profesor_id=None):
         self.codigo = codigo
         self.nombre = nombre
-        self.profesor = profesor
-
+        self.programa_id = programa_id
+        self.profesor_id = profesor_id
+    
     def __repr__(self):
-        return f'<Materia {self.codigo}>'
+        return f'<Materia {self.codigo} - {self.nombre}>'
 
 class Corte(db.Model):
     __tablename__ = 'cortes'
-
-    id = db.Column(db.String(20), primary_key=True, unique=True)
-    materia_codigo = db.Column(db.String(20), db.ForeignKey('materias.codigo'), nullable=False)
+    
+    id = db.Column(db.Integer, primary_key=True)
+    programa_id = db.Column(db.Integer, db.ForeignKey('programas.id'), nullable=False)
     seccion = db.Column(db.String(20), nullable=False)
-    periodo = db.Column(db.String(20), nullable=False)
-
-    # relaciones
-    materia = db.relationship('Materia', back_populates='cortes')
+    zona = db.Column(db.String(50), nullable=False)
+    fecha_inicio = db.Column(db.Date, nullable=False)
+    fecha_fin = db.Column(db.Date, nullable=False)
+    
+    # Relaciones
+    programa = db.relationship('Programa', back_populates='cortes')
     inscripciones = db.relationship('Inscripcion', back_populates='corte')
-
-    def __init__(self, id, materia_codigo, seccion, periodo):
-        self.id = id
-        self.materia_codigo = materia_codigo
+    
+    def __init__(self, programa_id, seccion, zona, fecha_inicio, fecha_fin):
+        self.programa_id = programa_id
         self.seccion = seccion
-        self.periodo = periodo
-
+        self.zona = zona
+        self.fecha_inicio = fecha_inicio
+        self.fecha_fin = fecha_fin
+    
     def __repr__(self):
-        return f'<Corte {self.id} - {self.materia_codigo} - {self.seccion} - {self.periodo}>'
+        return f'<Corte {self.seccion} - {self.zona} - {self.programa.nombre} - {self.fecha_inicio} - {self.fecha_fin}>'
 
 class Inscripcion(db.Model):
     __tablename__ = 'inscripciones'
-
+    
     id = db.Column(db.Integer, primary_key=True)
-    estudiante_cedula = db.Column(db.String(20), db.ForeignKey('estudiantes.cedula'), nullable=False)
-    materia_codigo = db.Column(db.String(20), db.ForeignKey('materias.codigo'), nullable=False)
-    corte_id = db.Column(db.String(20), db.ForeignKey('cortes.id'), nullable=False)
-    nota = db.Column(db.Float, nullable=True)
-    fecha_inscripcion = db.Column(db.DateTime, nullable=False)
+    estudiante_id = db.Column(db.String(20), db.ForeignKey('estudiantes.cedula'), nullable=False)
+    corte_id = db.Column(db.Integer, db.ForeignKey('cortes.id'), nullable=False)
+    fecha_inscripcion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     estado_pago = db.Column(db.Boolean, default=False)
-
+    
     # Relaciones
     estudiante = db.relationship('Estudiante', back_populates='inscripciones')
-    materia = db.relationship('Materia', back_populates='inscripciones')
     corte = db.relationship('Corte', back_populates='inscripciones')
-
-    def __init__(self, estudiante_cedula, materia_codigo, corte_id, nota, fecha_inscripcion, estado_pago=False):
-        self.estudiante_cedula = estudiante_cedula
-        self.materia_codigo = materia_codigo
+    
+    def __init__(self, estudiante_id, corte_id, estado_pago=False):
+        self.estudiante_id = estudiante_id
         self.corte_id = corte_id
-        self.nota = nota
-        self.fecha_inscripcion = fecha_inscripcion
         self.estado_pago = estado_pago
-
+    
     def __repr__(self):
-        return f'<Inscripcion {self.id} - Estudiante: {self.estudiante_cedula} - Materia: {self.materia_codigo} - Corte: {self.corte_id}>' 
+        return f'<Inscripcion {self.id} - Estudiante: {self.estudiante_id} - Corte: {self.corte_id}>'
+
+class Nota(db.Model):
+    __tablename__ = 'notas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    estudiante_id = db.Column(db.String(20), db.ForeignKey('estudiantes.cedula'), nullable=False)
+    materia_codigo = db.Column(db.Integer, db.ForeignKey('materias.codigo'), nullable=False)
+    nota = db.Column(db.Float, nullable=False)
+    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relaciones
+    estudiante = db.relationship('Estudiante', back_populates='notas')
+    materia = db.relationship('Materia', back_populates='notas')
+    
+    def __init__(self, estudiante_id, materia_codigo, nota):
+        self.estudiante_id = estudiante_id
+        self.materia_codigo = materia_codigo
+        self.nota = nota
+    
+    def __repr__(self):
+        return f'<Nota Estudiante: {self.estudiante_id} - Materia: {self.materia_codigo} - Nota: {self.nota}>' 

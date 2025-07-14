@@ -16,6 +16,8 @@ def create_app():
     # Importar modelos ANTES de registrar blueprints para que SQLAlchemy los detecte
     from modulos.central.models import Persona
     from modulos.estudiantes.models import Estudiante
+    from modulos.profesores.models import Profesor
+    from modulos.control_academico.models import Carrera, Programa, Materia, Corte, Inscripcion, Nota
     
     # Registrar los blueprints de cada módulo
     from modulos.estudiantes import bp as estudiantes_bp

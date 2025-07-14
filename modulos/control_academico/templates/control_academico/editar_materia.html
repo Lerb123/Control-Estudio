@@ -27,11 +27,22 @@
                 <input type="text" id="nombre" name="nombre" value="{{ materia.nombre }}" required>
             </div>
             <div class="form-group">
-                <label for="profesor">Profesor (Opcional):</label>
-                <select name="profesor" id="profesor">
+                <label for="programa_id">Programa:</label>
+                <select name="programa_id" id="programa_id" required>
+                    <option value="">Seleccione un programa</option>
+                    {% for programa in programas %}
+                        <option value="{{ programa.id }}" {% if programa.id == materia.programa_id %}selected{% endif %}>
+                            {{ programa.nombre }} - {{ programa.carrera.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="profesor_id">Profesor (Opcional):</label>
+                <select name="profesor_id" id="profesor_id">
                     <option value="">Sin profesor asignado</option>
                     {% for profesor in profesores %}
-                        <option value="{{ profesor.cedula }}" {% if profesor.cedula == materia.profesor %}selected{% endif %}>
+                        <option value="{{ profesor.cedula }}" {% if profesor.cedula == materia.profesor_id %}selected{% endif %}>
                             {{ profesor.nombre }} {{ profesor.apellido }} - {{ profesor.cedula }}
                         </option>
                     {% endfor %}
