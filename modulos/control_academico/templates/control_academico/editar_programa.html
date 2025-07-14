@@ -16,26 +16,28 @@
         {% endif %}
     {% endwith %}
 
-    <div class="form-container">
-        <form method="POST" class="form-estudiante">
+    <div class="form-container-academico">
+        <h2>Información del Programa</h2>
+        <form action="{{ url_for('control_academico.editar_programa', id=programa.id) }}" method="POST">
             <div class="form-group">
                 <label for="nombre">Nombre del Programa:</label>
-                <input type="text" id="nombre" name="nombre" value="{{ programa.nombre }}" required>
+                <input type="text" id="nombre" name="nombre" value="{{ programa.nombre }}" required >
             </div>
-            
             <div class="form-group">
                 <label for="carrera_id">Carrera:</label>
-                <select id="carrera_id" name="carrera_id" required>
+                <select name="carrera_id" id="carrera_id" required>
                     <option value="">Seleccione una carrera</option>
                     {% for carrera in carreras %}
-                        <option value="{{ carrera.id }}" {% if carrera.id == programa.carrera_id %}selected{% endif %}>{{ carrera.nombre }}</option>
+                        <option value="{{ carrera.id }}" {% if carrera.id == programa.carrera_id %}selected{% endif %}>
+                            {{ carrera.nombre }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
-            
-            <div class="form-group">
-                <button type="submit" class="btn-form-estudiante">Actualizar Programa</button>
-                <a href="{{ url_for('control_academico.listar_programas') }}" class="btn-nuevo-estudiante" style="display: inline-block; margin-left: 10px;">Cancelar</a>
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+                <button type="submit" class="btn-academico">Actualizar Programa</button>
+                <a href="{{ url_for('control_academico.listar_programas') }}" 
+                   class="btn-academico btn-academico-secondary">Cancelar</a>
             </div>
         </form>
     </div>

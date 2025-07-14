@@ -16,41 +16,38 @@
         {% endif %}
     {% endwith %}
 
-    <div class="form-container">
-        <form method="POST" class="form-estudiante">
+    <div class="form-container-academico">
+        <h2>Información del Corte</h2>
+        <form action="{{ url_for('control_academico.crear_corte') }}" method="POST">
             <div class="form-group">
                 <label for="programa_id">Programa:</label>
-                <select id="programa_id" name="programa_id" required>
+                <select name="programa_id" id="programa_id" required>
                     <option value="">Seleccione un programa</option>
                     {% for programa in programas %}
                         <option value="{{ programa.id }}">{{ programa.nombre }} - {{ programa.carrera.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
-            
             <div class="form-group">
                 <label for="seccion">Sección:</label>
-                <input type="text" id="seccion" name="seccion" required>
+                <input type="text" id="seccion" name="seccion" required >
             </div>
-            
             <div class="form-group">
                 <label for="zona">Zona:</label>
-                <input type="text" id="zona" name="zona" required>
+                <input type="text" id="zona" name="zona" required >
             </div>
-            
             <div class="form-group">
                 <label for="fecha_inicio">Fecha de Inicio:</label>
                 <input type="date" id="fecha_inicio" name="fecha_inicio" required>
             </div>
-            
             <div class="form-group">
                 <label for="fecha_fin">Fecha de Fin:</label>
                 <input type="date" id="fecha_fin" name="fecha_fin" required>
             </div>
-            
-            <div class="form-group">
-                <button type="submit" class="btn-form-estudiante">Crear Corte</button>
-                <a href="{{ url_for('control_academico.listar_cortes') }}" class="btn-nuevo-estudiante" style="display: inline-block; margin-left: 10px;">Cancelar</a>
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+                <button type="submit" class="btn-academico">Crear Corte</button>
+                <a href="{{ url_for('control_academico.listar_cortes') }}" 
+                   class="btn-academico btn-academico-secondary">Cancelar</a>
             </div>
         </form>
     </div>

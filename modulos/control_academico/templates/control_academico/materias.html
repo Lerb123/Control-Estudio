@@ -17,12 +17,12 @@
     {% endwith %}
 
     <!-- Formulario para nueva materia -->
-    <div class="form-container">
+    <div class="form-container-academico">
         <h2>Nueva Materia</h2>
         <form action="{{ url_for('control_academico.crear_materia') }}" method="POST">
             <div class="form-group">
                 <label for="codigo">Código:</label>
-                <input type="text" id="codigo" name="codigo" required>
+                <input type="text" id="codigo" name="codigo" required >
             </div>
             <div class="form-group">
                 <label for="nombre">Nombre:</label>
@@ -37,7 +37,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <button type="submit" class="btn-nuevo-estudiante">Crear Materia</button>
+            <button type="submit" class="btn-academico">Crear Materia</button>
         </form>
     </div>
 
@@ -58,15 +58,15 @@
                 <tbody>
                     {% for materia in materias %}
                     <tr>
-                        <td>{{ materia.codigo }}</td>
+                        <td><strong>{{ materia.codigo }}</strong></td>
                         <td>{{ materia.nombre }}</td>
                         <td>{{ materia.programa.nombre }} - {{ materia.programa.carrera.nombre }}</td>
                         <td>
                             {% set materia_asignaciones = asignaciones|selectattr("materia_codigo", "equalto", materia.codigo)|list %}
                             {% if materia_asignaciones %}
-                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                <ul class="asignaciones-list">
                                     {% for asignacion in materia_asignaciones %}
-                                    <li style="margin-bottom: 5px;">
+                                    <li>
                                         <strong>{{ asignacion.profesor.nombre }} {{ asignacion.profesor.apellido }}</strong><br>
                                         <small>Corte: {{ asignacion.corte.seccion }} - {{ asignacion.corte.zona }}</small>
                                     </li>
@@ -88,7 +88,10 @@
                 </tbody>
             </table>
         {% else %}
-            <p>No hay materias registradas.</p>
+            <div style="text-align: center; padding: 40px;">
+                <p class="text-muted">No hay materias registradas.</p>
+                <p>Comience creando una nueva materia usando el formulario de arriba.</p>
+            </div>
         {% endif %}
     </div>
 </div>

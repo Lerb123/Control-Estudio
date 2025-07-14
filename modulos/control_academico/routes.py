@@ -263,10 +263,12 @@ def eliminar_materia(codigo):
 @bp.route('/cortes')
 def listar_cortes():
     """Listar todos los cortes"""
+    from datetime import date
     cortes = Corte.query.all()
     programas = Programa.query.all()
+    fecha_actual = date.today()
     return render_template('control_academico/cortes.html', 
-                         cortes=cortes, programas=programas)
+                         cortes=cortes, programas=programas, fecha_actual=fecha_actual)
 
 @bp.route('/cortes/crear', methods=['GET', 'POST'])
 def crear_corte():

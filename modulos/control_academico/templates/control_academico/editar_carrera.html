@@ -16,16 +16,17 @@
         {% endif %}
     {% endwith %}
 
-    <div class="form-container">
-        <form method="POST" class="form-estudiante">
+    <div class="form-container-academico">
+        <h2>Información de la Carrera</h2>
+        <form action="{{ url_for('control_academico.editar_carrera', id=carrera.id) }}" method="POST">
             <div class="form-group">
                 <label for="nombre">Nombre de la Carrera:</label>
-                <input type="text" id="nombre" name="nombre" value="{{ carrera.nombre }}" required>
+                <input type="text" id="nombre" name="nombre" value="{{ carrera.nombre }}" required >
             </div>
-            
-            <div class="form-group">
-                <button type="submit" class="btn-form-estudiante">Actualizar Carrera</button>
-                <a href="{{ url_for('control_academico.listar_carreras') }}" class="btn-nuevo-estudiante" style="display: inline-block; margin-left: 10px;">Cancelar</a>
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+                <button type="submit" class="btn-academico">Actualizar Carrera</button>
+                <a href="{{ url_for('control_academico.listar_carreras') }}" 
+                   class="btn-academico btn-academico-secondary">Cancelar</a>
             </div>
         </form>
     </div>

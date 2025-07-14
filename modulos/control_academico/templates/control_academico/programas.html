@@ -1,6 +1,6 @@
 {% extends "central/base.html" %}
 
-{% block title %} {{super ()}} Programas {% endblock %}
+{% block title %} {{super ()}} Gestión de Programas {% endblock %}
 
 {% block content %}
 <div class="welcome-container">
@@ -17,35 +17,52 @@
     {% endwith %}
 
     <div class="tabla-estudiantes-contenedor">
-        <a href="{{ url_for('control_academico.crear_programa') }}" class="btn-nuevo-estudiante">Nuevo Programa</a>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Programas de Estudio</h2>
+            <a href="{{ url_for('control_academico.crear_programa') }}" class="btn-academico">Nuevo Programa</a>
+        </div>
         
-        <table class="tabla-estudiantes">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Carrera</th>
-                    <th>Materias</th>
-                    <th>Cortes</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for programa in programas %}
-                <tr>
-                    <td>{{ programa.id }}</td>
-                    <td>{{ programa.nombre }}</td>
-                    <td>{{ programa.carrera.nombre }}</td>
-                    <td>{{ programa.materias|length }}</td>
-                    <td>{{ programa.cortes|length }}</td>
-                    <td>
-                        <a href="{{ url_for('control_academico.editar_programa', id=programa.id) }}" class="btn-accion editar">Editar</a>
-                        <a href="{{ url_for('control_academico.eliminar_programa', id=programa.id) }}" class="btn-accion eliminar" onclick="return confirm('¿Estás seguro de que quieres eliminar este programa?')">Eliminar</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% if programas %}
+            <table class="tabla-estudiantes">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Carrera</th>
+                        <th>Materias</th>
+                        <th>Cortes</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for programa in programas %}
+                    <tr>
+                        <td><strong>{{ programa.id }}</strong></td>
+                        <td>{{ programa.nombre }}</td>
+                        <td>{{ programa.carrera.nombre }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ programa.materias|length }} materias</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-success">{{ programa.cortes|length }} cortes</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('control_academico.editar_programa', id=programa.id) }}" 
+                               class="btn-accion editar">Editar</a>
+                            <a href="{{ url_for('control_academico.eliminar_programa', id=programa.id) }}" 
+                               class="btn-accion eliminar"
+                               onclick="return confirm('¿Está seguro de eliminar este programa?')">Eliminar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="text-align: center; padding: 40px;">
+                <p class="text-muted">No hay programas registrados.</p>
+                <p>Comience creando un nuevo programa usando el botón de arriba.</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %} 

@@ -1,6 +1,6 @@
 {% extends "central/base.html" %}
 
-{% block title %} {{super ()}} Cortes {% endblock %}
+{% block title %} {{super ()}} Gestión de Cortes {% endblock %}
 
 {% block content %}
 <div class="welcome-container">
@@ -17,39 +17,64 @@
     {% endwith %}
 
     <div class="tabla-estudiantes-contenedor">
-        <a href="{{ url_for('control_academico.crear_corte') }}" class="btn-nuevo-estudiante">Nuevo Corte</a>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Cortes Académicos</h2>
+            <a href="{{ url_for('control_academico.crear_corte') }}" class="btn-academico">Nuevo Corte</a>
+        </div>
         
-        <table class="tabla-estudiantes">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Programa</th>
-                    <th>Sección</th>
-                    <th>Zona</th>
-                    <th>Fecha Inicio</th>
-                    <th>Fecha Fin</th>
-                    <th>Inscripciones</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for corte in cortes %}
-                <tr>
-                    <td>{{ corte.id }}</td>
-                    <td>{{ corte.programa.nombre }}</td>
-                    <td>{{ corte.seccion }}</td>
-                    <td>{{ corte.zona }}</td>
-                    <td>{{ corte.fecha_inicio.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ corte.fecha_fin.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ corte.inscripciones|length }}</td>
-                    <td>
-                        <a href="{{ url_for('control_academico.editar_corte', id=corte.id) }}" class="btn-accion editar">Editar</a>
-                        <a href="{{ url_for('control_academico.eliminar_corte', id=corte.id) }}" class="btn-accion eliminar" onclick="return confirm('¿Estás seguro de que quieres eliminar este corte?')">Eliminar</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% if cortes %}
+            <table class="tabla-estudiantes">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Programa</th>
+                        <th>Sección</th>
+                        <th>Zona</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Inscripciones</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for corte in cortes %}
+                    <tr>
+                        <td><strong>{{ corte.id }}</strong></td>
+                        <td>{{ corte.programa.nombre }}</td>
+                        <td>{{ corte.seccion }}</td>
+                        <td>{{ corte.zona }}</td>
+                        <td>{{ corte.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ corte.fecha_fin.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ corte.inscripciones|length }} estudiantes</span>
+                        </td>
+                        <td>
+                            {% if corte.fecha_inicio <= fecha_actual <= corte.fecha_fin %}
+                                <span class="badge badge-success">Activo</span>
+                            {% elif fecha_actual < corte.fecha_inicio %}
+                                <span class="badge badge-warning">Próximo</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Finalizado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('control_academico.editar_corte', id=corte.id) }}" 
+                               class="btn-accion editar">Editar</a>
+                            <a href="{{ url_for('control_academico.eliminar_corte', id=corte.id) }}" 
+                               class="btn-accion eliminar" 
+                               onclick="return confirm('¿Estás seguro de que quieres eliminar este corte?')">Eliminar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="text-align: center; padding: 40px;">
+                <p class="text-muted">No hay cortes registrados.</p>
+                <p>Comience creando un nuevo corte usando el botón de arriba.</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %} 
