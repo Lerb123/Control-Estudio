@@ -1,0 +1,25 @@
+{% extends "central/base.html" %}
+{% block title %}Editar Nota{% endblock %}
+{% block content %}
+<h2>Editar Nota</h2>
+
+<p><strong>Estudiante:</strong> {{ estudiante.nombre }} {{ estudiante.apellido }} ({{ estudiante.cedula }})</p>
+<p><strong>Materia:</strong> {{ materia.nombre }} ({{ materia.codigo }})</p>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<form method="POST">
+    <div class="form-group">
+        <label for="nota">Nota (0-10):</label>
+        <input type="number" step="1" min="0" max="10" id="nota" name="nota" required value="{{ nota_existente.nota if nota_existente else '' }}">
+    </div>
+    <button type="submit" class="btn-form-estudiante">Guardar Nota</button>
+    <a href="{{ url_for('profesores.notas_profesor', cedula=profesor.cedula) }}" class="btn-form-estudiante">Volver</a>
+</form>
+{% endblock %} 

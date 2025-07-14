@@ -1,0 +1,46 @@
+{% extends "central/base.html" %}
+{% block title %}Gestión de Notas{% endblock %}
+{% block content %}
+<h2>Gestión de Notas</h2>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<table class="tabla-estudiantes">
+    <thead>
+        <tr>
+            <th>Estudiante</th>
+            <th>Cédula</th>
+            <th>Materia</th>
+            <th>Programa</th>
+            <th>Corte</th>
+            <th>Sección</th>
+            <th>Zona</th>
+            <th>Nota</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in estudiantes_con_notas %}
+        <tr>
+            <td>{{ item.estudiante.nombre }} {{ item.estudiante.apellido }}</td>
+            <td>{{ item.estudiante.cedula }}</td>
+            <td>{{ item.materia.nombre }}</td>
+            <td>{{ item.programa.nombre }}</td>
+            <td>{{ item.corte.id }}</td>
+            <td>{{ item.corte.seccion }}</td>
+            <td>{{ item.corte.zona }}</td>
+            <td>{% if item.nota %}{{ item.nota.nota }}{% else %}No asignada{% endif %}</td>
+            <td>
+                <a href="{{ url_for('profesores.editar_nota', cedula=profesor.cedula, estudiante_cedula=item.estudiante.cedula, materia_codigo=item.materia.codigo) }}" class="btn-form-estudiante">Editar Nota</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 

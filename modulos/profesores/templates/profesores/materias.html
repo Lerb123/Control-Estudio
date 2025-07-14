@@ -57,6 +57,7 @@
     <div class="tabla-estudiantes-contenedor">
         <h2>Mis Materias Asignadas</h2>
         {% if materias %}
+            <a href="{{ url_for('profesores.notas_profesor', cedula=profesor.cedula) }}" class="btn-form-estudiante" style="margin-bottom: 15px; display: inline-block;">Gestionar Notas</a>
             <table class="tabla-estudiantes">
                 <thead>
                     <tr>

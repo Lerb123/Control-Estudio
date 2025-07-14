@@ -2,10 +2,10 @@ from flask import render_template, redirect, url_for, flash, request
 from modulos.profesores import bp
 from modulos import db
 from modulos.profesores.models import Profesor
-from modulos.control_academico.models import Materia
+from modulos.control_academico.models import Materia, Corte, Inscripcion, Nota, Programa
+from modulos.estudiantes.models import Estudiante
 from sqlalchemy.exc import IntegrityError
 from modulos.central.models import Persona
-from modulos.control_academico.models import Corte
 
 @bp.route('/')
 def index():
@@ -215,3 +215,88 @@ def eliminar_materia(cedula, codigo):
         flash(f'Error al eliminar la materia: {str(e)}', 'error')
     
     return redirect(url_for('profesores.materias_profesor', cedula=cedula)) 
+
+@bp.route('/profesores/<cedula>/notas')
+def notas_profesor(cedula):
+    profesor = Profesor.query.get_or_404(cedula)
+    # Obtener todas las materias del profesor
+    materias_profesor = Materia.query.filter_by(profesor_id=cedula).all()
+    estudiantes_con_notas = []
+    for materia in materias_profesor:
+        # Buscar programas que contienen esta materia
+        programas_con_materia = Programa.query.join(Materia).filter(Materia.codigo == materia.codigo).all()
+        for programa in programas_con_materia:
+            # Buscar cortes de este programa
+            cortes_programa = Corte.query.filter_by(programa_id=programa.id).all()
+            for corte in cortes_programa:
+                # Buscar inscripciones en este corte
+                inscripciones = Inscripcion.query.filter_by(corte_id=corte.id).all()
+                for inscripcion in inscripciones:
+                    estudiante = Estudiante.query.get(inscripcion.estudiante_id)
+                    if estudiante:
+                        # Buscar si ya existe una nota para este estudiante y materia
+                        nota_existente = Nota.query.filter_by(
+                            estudiante_id=estudiante.cedula,
+                            materia_codigo=materia.codigo
+                        ).first()
+                        estudiantes_con_notas.append({
+                            'estudiante': estudiante,
+                            'materia': materia,
+                            'corte': corte,
+                            'programa': programa,
+                            'inscripcion': inscripcion,
+                            'nota': nota_existente
+                        })
+    return render_template('profesores/notas.html', 
+                         profesor=profesor, 
+                         estudiantes_con_notas=estudiantes_con_notas)
+
+@bp.route('/profesores/<cedula>/notas/<estudiante_cedula>/<materia_codigo>', methods=['GET', 'POST'])
+def editar_nota(cedula, estudiante_cedula, materia_codigo):
+    profesor = Profesor.query.get_or_404(cedula)
+    estudiante = Estudiante.query.get_or_404(estudiante_cedula)
+    materia = Materia.query.get_or_404(materia_codigo)
+    # Verificar que la materia pertenece al profesor
+    if materia.profesor_id != cedula:
+        flash('No tiene permiso para editar notas de esta materia', 'error')
+        return redirect(url_for('profesores.notas_profesor', cedula=cedula))
+    if request.method == 'POST':
+        try:
+            nota_valor = float(request.form['nota'])
+            if nota_valor < 0 or nota_valor > 100:
+                flash('La nota debe estar entre 0 y 100', 'error')
+                return render_template('profesores/editar_nota.html', 
+                                    profesor=profesor, 
+                                    estudiante=estudiante, 
+                                    materia=materia)
+            nota = Nota.query.filter_by(
+                estudiante_id=estudiante_cedula,
+                materia_codigo=materia_codigo
+            ).first()
+            if nota:
+                nota.nota = nota_valor
+                flash('Nota actualizada exitosamente', 'success')
+            else:
+                nota = Nota(
+                    estudiante_id=estudiante_cedula,
+                    materia_codigo=materia_codigo,
+                    nota=nota_valor
+                )
+                db.session.add(nota)
+                flash('Nota registrada exitosamente', 'success')
+            db.session.commit()
+            return redirect(url_for('profesores.notas_profesor', cedula=cedula))
+        except ValueError:
+            flash('La nota debe ser un número válido', 'error')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al guardar la nota: {str(e)}', 'error')
+    nota_existente = Nota.query.filter_by(
+        estudiante_id=estudiante_cedula,
+        materia_codigo=materia_codigo
+    ).first()
+    return render_template('profesores/editar_nota.html', 
+                         profesor=profesor, 
+                         estudiante=estudiante, 
+                         materia=materia,
+                         nota_existente=nota_existente) 
