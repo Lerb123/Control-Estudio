@@ -42,27 +42,43 @@
                     <th>Fecha Inicio</th>
                     <th>Fecha Fin</th>
                     <th>Fecha Inscripción</th>
+                    <th>Nota</th>
                     <th>Estado Pago</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for inscripcion in inscripciones %}
-                    <tr>
-                        <td>{{ inscripcion.corte.id }}</td>
-                        <td>{{ inscripcion.corte.programa.nombre }}</td>
-                        <td>{{ inscripcion.corte.seccion }}</td>
-                        <td>{{ inscripcion.corte.zona }}</td>
-                        <td>{{ inscripcion.corte.fecha_inicio.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ inscripcion.corte.fecha_fin.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ 'Pagado' if inscripcion.estado_pago else 'Pendiente' }}</td>
-                        <td>
-                            <a href="{{ url_for('estudiantes.eliminar_inscripcion', inscripcion_id=inscripcion.id) }}" 
-                               class="btn-accion eliminar"
-                               onclick="return confirm('¿Está seguro de eliminar esta inscripción?')">Eliminar</a>
-                        </td>
-                    </tr>
+                <tr>
+                    <td>{{ inscripcion.corte.id }}</td>
+                    <td>{{ inscripcion.corte.programa.nombre }}</td>
+                    <td>{{ inscripcion.corte.seccion }}</td>
+                    <td>{{ inscripcion.corte.zona }}</td>
+                    <td>{{ inscripcion.corte.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ inscripcion.corte.fecha_fin.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ inscripcion.fecha_inscripcion.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        {% if inscripcion.nota %}
+                            {{ inscripcion.nota.nota }}
+                        {% else %}
+                            <span class="text-muted">Sin asignar</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if inscripcion.estado_pago %}
+                            <span class="badge badge-success">Pagado</span>
+                        {% else %}
+                            <form action="{{ url_for('estudiantes.confirmar_pago', inscripcion_id=inscripcion.id) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn-accion editar" onclick="return confirm('¿Confirmar el pago de esta materia?')">Pendiente</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('estudiantes.eliminar_inscripcion', inscripcion_id=inscripcion.id) }}" 
+                           class="btn-accion eliminar"
+                           onclick="return confirm('¿Está seguro de eliminar esta inscripción?')">Eliminar</a>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>

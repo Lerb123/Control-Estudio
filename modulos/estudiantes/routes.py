@@ -2,7 +2,8 @@ from flask import render_template, redirect, url_for, flash, request
 from modulos.estudiantes import bp
 from modulos import db
 from modulos.estudiantes.models import Estudiante
-from modulos.control_academico.models import Materia, Corte, Inscripcion, Carrera
+from modulos.control_academico.models import Materia, Corte, Inscripcion, Carrera, Pago
+from modulos.central.models import Persona
 from datetime import datetime
 
 @bp.route('/')
@@ -12,7 +13,6 @@ def index():
 
 @bp.route('/registro_estudiantes',methods =['GET','POST'])
 def nuevo_estudiante():
-    # Obtener todas las carreras disponibles
     carreras = Carrera.query.all()
     
     if request.method == 'POST':
@@ -35,8 +35,9 @@ def nuevo_estudiante():
         if Estudiante.query.filter_by(cedula=cedula).first():
             flash('Ya existe un estudiante con esa cédula.', 'error')
             return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera_id, carreras=carreras)
-        if Estudiante.query.filter_by(usuario=usuario).first():
-            flash('Ya existe un estudiante con ese nombre de usuario.', 'error')
+        # Verifica usuario único en toda la tabla Persona
+        if Persona.query.filter_by(usuario=usuario).first():
+            flash('Ya existe una persona con ese nombre de usuario.', 'error')
             return render_template('estudiantes/form_estudiante.html', nombre=nombre, apellido=apellido, cedula=cedula, telefono=numero_telefono, correo=correo_electronico, usuario=usuario, carrera=carrera_id, carreras=carreras)
         if Estudiante.query.filter_by(correo_electronico=correo_electronico).first():
             flash('Ya existe un estudiante con ese correo electrónico.', 'error')
@@ -190,4 +191,49 @@ def eliminar_inscripcion(inscripcion_id):
         db.session.rollback()
         flash(f'Error al eliminar inscripción: {str(e)}', 'danger')
     return redirect(url_for('estudiantes.inscripciones', cedula=inscripcion.estudiante_id))
+
+@bp.route('/registrar_deposito/<cedula>', methods=['GET', 'POST'])
+def registrar_deposito(cedula):
+    estudiante = Estudiante.query.get_or_404(cedula)
+    if request.method == 'POST':
+        recibo = request.form['recibo']
+        monto = float(request.form['monto'])
+        # Validar recibo único
+        if Pago.query.filter_by(recibo=recibo).first():
+            flash('Ya existe un pago con ese número de recibo.', 'danger')
+            return redirect(url_for('estudiantes.registrar_deposito', cedula=cedula))
+        try:
+            pago = Pago(
+                recibo=recibo,
+                estudiante_id=cedula,
+                monto=monto,
+                tipo='deposito'
+            )
+            db.session.add(pago)
+            # Sumar saldo al estudiante
+            estudiante.saldo_disponible += monto
+            db.session.commit()
+            flash('Depósito registrado exitosamente.', 'success')
+            return redirect(url_for('estudiantes.index'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al registrar el depósito: {str(e)}', 'danger')
+    return render_template('estudiantes/registrar_deposito.html', estudiante=estudiante)
+
+@bp.route('/confirmar_pago/<int:inscripcion_id>', methods=['POST'])
+def confirmar_pago(inscripcion_id):
+    inscripcion = Inscripcion.query.get_or_404(inscripcion_id)
+    estudiante = Estudiante.query.get_or_404(inscripcion.estudiante_id)
+    monto_materia = 100  # Puedes cambiar este valor según tu lógica
+
+    if estudiante.saldo_disponible < monto_materia:
+        flash('Saldo insuficiente para pagar la materia. Debe tener al menos 100.', 'danger')
+        return redirect(url_for('estudiantes.inscripciones', cedula=estudiante.cedula))
+
+    # Descuenta el saldo y marca como pagado
+    estudiante.saldo_disponible -= monto_materia
+    inscripcion.estado_pago = True
+    db.session.commit()
+    flash('Pago realizado exitosamente.', 'success')
+    return redirect(url_for('estudiantes.inscripciones', cedula=estudiante.cedula))
 

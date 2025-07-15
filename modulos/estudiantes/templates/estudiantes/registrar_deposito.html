@@ -1,0 +1,71 @@
+{% extends "central/base.html" %}
+
+{% block title %}Registrar Depósito{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+    <h2 class="titulo-estudiantes">Registrar Depósito</h2>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="form-estudiante" style="max-width: 500px; margin: 0 auto;">
+    <div class="form-row">
+        <div class="form-col">
+            <label>Saldo Actual:</label>
+            <label style="display:block; background:#e0e0e0; color:#2c3e50; border-radius:4px; padding:7px 10px;">{{ estudiante.saldo_disponible }}</label>
+        </div>
+    </div>
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-col">
+                <label for="recibo">Número de Recibo</label>
+                <input type="text" id="recibo" name="recibo" placeholder="Número de Recibo" required>
+            </div>
+            <div class="form-col">
+                <label for="monto">Monto</label>
+                <input type="number" step="0.01" id="monto" name="monto" placeholder="Monto a depositar" required>
+            </div>
+        </div>
+        <div class="form-row" style="gap: 10px;">
+            <button type="submit" class="btn-form-estudiante btn-accion" style="width: 50%; margin-right: 5px; font-size: 0.95em; padding: 6px 0;">Registrar Depósito</button>
+            <a href="{{ url_for('estudiantes.index') }}" class="btn-form-estudiante btn-accion" style="width: 50%; background:#888; text-align:center; margin-left: 5px; font-size: 0.95em; padding: 6px 0;">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<hr>
+
+<h3 class="titulo-estudiantes" style="margin-top: 40px;">Depósitos Registrados</h3>
+<div class="tabla-estudiantes-contenedor" style="max-width: 600px; margin: 0 auto;">
+    {% set depositos = estudiante.pagos | selectattr('tipo', 'equalto', 'deposito') | list %}
+    {% if depositos %}
+        <table class="tabla-estudiantes">
+            <thead>
+                <tr>
+                    <th>N° Recibo</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for deposito in depositos %}
+                <tr>
+                    <td>{{ deposito.recibo }}</td>
+                    <td>{{ deposito.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ deposito.monto }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <h4 style="text-align:center;">No hay depósitos registrados</h4>
+    {% endif %}
+</div>
+{% endblock %}

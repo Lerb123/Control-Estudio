@@ -207,7 +207,12 @@ def asignar_materia(cedula):
         
         return redirect(url_for('profesores.materias_profesor', cedula=cedula))
     
-    materias = Materia.query.all()
+    # Obtener los códigos de materias ya asignadas al profesor en cualquier corte
+    asignaciones = AsignacionMateria.query.filter_by(profesor_id=cedula).all()
+    materias_asignadas = {a.materia_codigo for a in asignaciones}
+    
+    # Filtrar materias que NO están asignadas al profesor
+    materias = Materia.query.filter(~Materia.codigo.in_(materias_asignadas)).all()
     cortes = Corte.query.all()
     return render_template('profesores/asignar_materia.html', 
                          profesor=profesor, 
@@ -334,4 +339,4 @@ def editar_nota(cedula, estudiante_cedula, materia_codigo):
                          profesor=profesor, 
                          estudiante=estudiante, 
                          materia=materia, 
-                         nota=nota) 
+                         nota=nota)

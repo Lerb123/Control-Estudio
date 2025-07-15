@@ -9,13 +9,10 @@ from modulos.estudiantes.models import Estudiante
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
-# ============================================================================
-# VISTA PRINCIPAL - INDEX
-# ============================================================================
 
 @bp.route('/')
 def index():
-    """Vista principal del módulo de control académico"""
+    
     # Obtener estadísticas básicas
     total_carreras = Carrera.query.count()
     total_programas = Programa.query.count()
@@ -32,9 +29,6 @@ def index():
                          total_inscripciones=total_inscripciones,
                          total_notas=total_notas)
 
-# ============================================================================
-# CRUD CARRERAS
-# ============================================================================
 
 @bp.route('/carreras')
 def listar_carreras():
@@ -100,9 +94,6 @@ def eliminar_carrera(id):
     
     return redirect(url_for('control_academico.listar_carreras'))
 
-# ============================================================================
-# CRUD PROGRAMAS
-# ============================================================================
 
 @bp.route('/programas')
 def listar_programas():
@@ -169,10 +160,6 @@ def eliminar_programa(id):
         flash(f'Error al eliminar el programa: {str(e)}', 'error')
     
     return redirect(url_for('control_academico.listar_programas'))
-
-# ============================================================================
-# CRUD MATERIAS
-# ============================================================================
 
 
 @bp.route('/materias')
@@ -256,9 +243,6 @@ def eliminar_materia(codigo):
     
     return redirect(url_for('control_academico.listar_materias'))
 
-# ============================================================================
-# CRUD CORTES
-# ============================================================================
 
 @bp.route('/cortes')
 def listar_cortes():
@@ -343,10 +327,6 @@ def eliminar_corte(id):
     
     return redirect(url_for('control_academico.listar_cortes'))
 
-# ============================================================================
-# CRUD INSCRIPCIONES
-# ============================================================================
-
 @bp.route('/inscripciones')
 def listar_inscripciones():
     """Listar todas las inscripciones"""
@@ -428,9 +408,6 @@ def eliminar_inscripcion(id):
     
     return redirect(url_for('control_academico.listar_inscripciones'))
 
-# ============================================================================
-# CRUD NOTAS
-# ============================================================================
 
 @bp.route('/notas')
 def listar_notas():
@@ -511,4 +488,6 @@ def eliminar_nota(id):
         db.session.rollback()
         flash(f'Error al eliminar la nota: {str(e)}', 'error')
     
-    return redirect(url_for('control_academico.listar_notas')) 
+    return redirect(url_for('control_academico.listar_notas'))
+
+ 

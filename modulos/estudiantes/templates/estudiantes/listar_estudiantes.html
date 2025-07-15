@@ -48,7 +48,8 @@ Lista de Estudiantes
                     <td>
                         <a href="{{ url_for('estudiantes.editar_estudiante', cedula=estudiante.cedula) }}" class="btn-accion editar">Editar</a> |
                         <a href="{{ url_for('estudiantes.eliminar_estudiante', cedula=estudiante.cedula) }}" class="btn-accion eliminar">Eliminar</a> |
-                        <a href="{{ url_for('estudiantes.inscripciones', cedula=estudiante.cedula) }}" class="btn-accion eliminar">Inscripciones</a>
+                        <a href="{{ url_for('estudiantes.inscripciones', cedula=estudiante.cedula) }}" class="btn-accion eliminar">Inscripciones</a> |
+                        <a href="{{ url_for('estudiantes.registrar_deposito', cedula=estudiante.cedula) }}" class="btn-accion eliminar">Registrar Depósito</a>
                     </td>
                 </tr>
                 {% endfor %}

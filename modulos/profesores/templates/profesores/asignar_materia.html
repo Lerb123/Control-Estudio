@@ -3,44 +3,46 @@
 {% block title %}Asignar Materia - {{ profesor.nombre }} {{ profesor.apellido }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h4>Asignar Materia a Profesor</h4>
-                    <p class="mb-0"><strong>Profesor:</strong> {{ profesor.nombre }} {{ profesor.apellido }}</p>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="form-group">
-                            <label for="materia_codigo">Materia:</label>
-                            <select class="form-control" id="materia_codigo" name="materia_codigo" required>
-                                <option value="">Seleccione una materia</option>
-                                {% for materia in materias %}
-                                <option value="{{ materia.codigo }}">{{ materia.codigo }} - {{ materia.nombre }} ({{ materia.programa.nombre }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="corte_id">Corte:</label>
-                            <select class="form-control" id="corte_id" name="corte_id" required>
-                                <option value="">Seleccione un corte</option>
-                                {% for corte in cortes %}
-                                <option value="{{ corte.id }}">{{ corte.seccion }} - {{ corte.zona }} ({{ corte.programa.nombre }}) - {{ corte.fecha_inicio }} a {{ corte.fecha_fin }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Asignar Materia</button>
-                            <a href="{{ url_for('profesores.materias_profesor', cedula=profesor.cedula) }}" class="btn btn-secondary">Cancelar</a>
-                        </div>
-                    </form>
+<div class="centralizar-pagina">
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Asignar Materia a Profesor</h4>
+                        <p class="mb-0"><strong>Profesor:</strong> {{ profesor.nombre }} {{ profesor.apellido }}</p>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <div class="form-group">
+                                <label for="materia_codigo">Materia:</label>
+                                <select class="form-control" id="materia_codigo" name="materia_codigo" required>
+                                    <option value="">Seleccione una materia</option>
+                                    {% for materia in materias %}
+                                        <option value="{{ materia.codigo }}">{{ materia.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="corte_id">Corte:</label>
+                                <select class="form-control" id="corte_id" name="corte_id" required>
+                                    <option value="">Seleccione un corte</option>
+                                    {% for corte in cortes %}
+                                    <option value="{{ corte.id }}">{{ corte.seccion }} - {{ corte.zona }} ({{ corte.programa.nombre }}) - {{ corte.fecha_inicio }} a {{ corte.fecha_fin }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">Asignar Materia</button>
+                                <a href="{{ url_for('profesores.materias_profesor', cedula=profesor.cedula) }}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

@@ -148,4 +148,28 @@ class Nota(db.Model):
         self.nota = nota
     
     def __repr__(self):
-        return f'<Nota Estudiante: {self.estudiante_id} - Materia: {self.materia_codigo} - Nota: {self.nota}>' 
+        return f'<Nota Estudiante: {self.estudiante_id} - Materia: {self.materia_codigo} - Nota: {self.nota}>'
+
+class Pago(db.Model):
+    __tablename__ = 'pagos'
+    
+    recibo = db.Column(db.String(50), primary_key=True)
+    estudiante_id = db.Column(db.String(20), db.ForeignKey('estudiantes.cedula'), nullable=False)
+    monto = db.Column(db.Float, nullable=False)
+    fecha_pago = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)  # 'deposito' o 'pago_materia'
+    materia_codigo = db.Column(db.Integer, db.ForeignKey('materias.codigo'), nullable=True)  # Solo si es pago de materia
+
+    estudiante = db.relationship('Estudiante', backref='pagos')
+    materia = db.relationship('Materia', backref='pagos')
+
+    def __init__(self, recibo, estudiante_id, monto, tipo, materia_codigo=None):
+        self.recibo = recibo
+        self.estudiante_id = estudiante_id
+        self.monto = monto
+        self.tipo = tipo
+        self.materia_codigo = materia_codigo
+
+    def __repr__(self):
+        return f'<Pago Recibo: {self.recibo} - Estudiante: {self.estudiante_id} - Tipo: {self.tipo} - Monto: {self.monto}>'
+
