@@ -1,20 +1,28 @@
-from flask import render_template, redirect, url_for, flash, request, send_file, jsonify, Response
+# Flask imports
+from flask import (
+    render_template, redirect, url_for, flash, request, 
+    send_file, jsonify, Response, render_template_string
+)
+import io
+import os
+from datetime import datetime
+from sqlalchemy.exc import IntegrityError
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, 
+    Spacer, Image
+)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from modulos.profesores import bp
 from modulos import db
 from modulos.profesores.models import Profesor
-from modulos.control_academico.models import Materia, Corte, Inscripcion, Nota, Programa, AsignacionMateria
+from modulos.control_academico.models import (
+    Materia, Corte, Inscripcion, Nota, Programa, AsignacionMateria
+)
 from modulos.estudiantes.models import Estudiante
-from sqlalchemy.exc import IntegrityError
 from modulos.central.models import Persona
-from datetime import datetime
-from flask import render_template_string
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib import colors
-import io
-import os
 
 @bp.route('/')
 def index():
@@ -328,194 +336,153 @@ def editar_nota(cedula, estudiante_cedula, materia_codigo):
 def crear_acta_pdf(cedula, materia_codigo):
     profesor = Profesor.query.get_or_404(cedula)
     materia = Materia.query.get_or_404(materia_codigo)
-    
-    # Verificar que el profesor tiene asignada esta materia
+
     asignacion = AsignacionMateria.query.filter_by(
         profesor_id=cedula,
         materia_codigo=materia_codigo
     ).first()
-    
+
     if not asignacion:
         flash('No tiene permiso para generar acta de esta materia', 'error')
         return redirect(url_for('profesores.notas_profesor', cedula=cedula))
-    
-    # Obtener todas las notas de la materia
-    notas = Nota.query.filter_by(materia_codigo=materia_codigo).all()
-    
-    # Crear el PDF
+
+    estudiantes_inscritos = Inscripcion.query.filter_by(corte_id=asignacion.corte_id).all()
+
+    if not estudiantes_inscritos:
+        flash('No hay estudiantes inscritos en este corte para generar el acta', 'warning')
+        return redirect(url_for('profesores.notas_profesor', cedula=cedula))
+
+    notas = []
+    for inscripcion in estudiantes_inscritos:
+        nota = Nota.query.filter_by(estudiante_id=inscripcion.estudiante_id, materia_codigo=materia_codigo).first()
+        if nota:
+            notas.append(nota)
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     elements = []
-    
-    # Estilos
+
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        spaceAfter=20,
-        alignment=1,  # Centrado
-        fontName='Helvetica-Bold'
-    )
-    
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Heading2'],
-        fontSize=14,
-        spaceAfter=15,
-        alignment=1,  # Centrado
-        fontName='Helvetica-Bold'
-    )
-    
-    # Encabezado
-    elements.append(Paragraph("UNIVERSIDAD DE ORIENTE", title_style))
-    elements.append(Paragraph("POSTGRADO - ACTA DE EVALUACIÓN", subtitle_style))
-    elements.append(Spacer(1, 20))
-    
-    # Información del curso
-    curso_data = [
-        ['CODIGO', 'ASIGNATURA', 'SECC', 'AÑO', 'PER', 'LAPSO'],
-        [str(materia.codigo), materia.nombre.upper(), 'GGIA', '2024', '', 'diciembre - 2024']
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=14, alignment=1, fontName='Helvetica-Bold')
+    subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Heading2'], fontSize=12, alignment=1, fontName='Helvetica-Bold')
+    custom_normal = ParagraphStyle('CustomNormal', fontName='Helvetica', fontSize=9, leading=10)
+
+    # Logo y título
+    logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'images', 'logo_udo.jpg')
+    logo = Image(logo_path, width=1*inch, height=1*inch)
+    header_data = [[logo, Paragraph("<b>UNIVERSIDAD DE ORIENTE</b><br/>POSTGRADO - ACTA DE EVALUACIÓN", title_style)]]
+    header_table = Table(header_data, colWidths=[1.2*inch, 5.8*inch])
+    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'CENTER')]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 12))
+
+    # Info del curso
+    info_data = [
+        ["CÓDIGO:", materia.codigo, "ASIGNATURA:", materia.nombre.upper(), "SECC:", asignacion.corte.seccion],
+        ["AÑO:", "2024", "PER:", "", "LAPSO:", f"{asignacion.corte.zona} - 2024"]
     ]
-    
-    curso_table = Table(curso_data, colWidths=[1*inch, 2.5*inch, 0.8*inch, 0.8*inch, 0.8*inch, 1.5*inch])
-    curso_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+    info_table = Table(info_data, colWidths=[0.8*inch, 1.2*inch, 1.2*inch, 2.5*inch, 0.8*inch, 1.3*inch])
+    info_table.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
     ]))
-    elements.append(curso_table)
-    elements.append(Spacer(1, 15))
-    
-    # Información del profesor
+    elements.append(info_table)
+    elements.append(Spacer(1, 10))
+
+    # Profesor
     elements.append(Paragraph("PROFESOR", subtitle_style))
-    elements.append(Paragraph(f"{profesor.apellido} {profesor.nombre}", styles['Normal']))
-    elements.append(Paragraph(f"V-{profesor.cedula}", styles['Normal']))
-    elements.append(Spacer(1, 20))
-    
-    # Tabla de estudiantes y notas
-    headers = ['N°', 'CEDULA DE IDENTIDAD', 'APELLIDOS Y NOMBRES', 'TIPO EXAMEN', 'CALIFICACION']
-    calificacion_headers = ['N°', 'LETRAS']
-    
-    # Crear tabla con subcolumnas para calificación
-    table_data = [headers]
-    
-    # Agregar subheaders para calificación
+    elements.append(Paragraph(f"{profesor.apellido} {profesor.nombre}", custom_normal))
+    elements.append(Paragraph(f"V-{profesor.cedula}", custom_normal))
+    elements.append(Spacer(1, 10))
+
+    # Tabla encabezados
+    headers = ['N°', 'CEDULA DE IDENTIDAD', 'APELLIDOS Y NOMBRES', 'TIPO EXAMEN', 'CALIFICACIÓN', '']
     calificacion_row = ['', '', '', '', 'N°', 'LETRAS']
-    table_data.append(calificacion_row)
-    
-    # Función para convertir número a letras
+    table_data = [headers, calificacion_row]
+
     def numero_a_letras(numero):
-        if numero == 0:
-            return "CERO"
-        elif numero == 1:
-            return "UNO"
-        elif numero == 2:
-            return "DOS"
-        elif numero == 3:
-            return "TRES"
-        elif numero == 4:
-            return "CUATRO"
-        elif numero == 5:
-            return "CINCO"
-        elif numero == 6:
-            return "SEIS"
-        elif numero == 7:
-            return "SIETE"
-        elif numero == 8:
-            return "OCHO"
-        elif numero == 9:
-            return "NUEVE"
-        elif numero == 10:
-            return "DIEZ"
+        return ["CERO", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE", "DIEZ"][numero] if isinstance(numero, int) and 0 <= numero <= 10 else "NC"
+
+    for i, inscripcion in enumerate(estudiantes_inscritos, 1):
+        estudiante = inscripcion.estudiante
+        nota_estudiante = next((nota for nota in notas if nota.estudiante_id == estudiante.cedula), None)
+        if nota_estudiante:
+            numero_nota = int(nota_estudiante.nota) if nota_estudiante.nota.is_integer() else ""
+            letras_nota = numero_a_letras(numero_nota) if numero_nota != "" else "NC"
         else:
-            return "NC"
-    
-    # Agregar datos de estudiantes
-    for i, nota in enumerate(notas, 1):
-        estudiante = nota.estudiante
-        numero_nota = int(nota.nota) if nota.nota.is_integer() else nota.nota
-        letras_nota = numero_a_letras(int(nota.nota)) if nota.nota.is_integer() else "NC"
-        
+            numero_nota = ""
+            letras_nota = "NC"
+
         row = [
             f"{i:02d}",
             f"V-{estudiante.cedula}",
             f"{estudiante.apellido} {estudiante.nombre}",
-            "F",  # Tipo examen (Final)
+            "F",
             str(numero_nota),
             letras_nota
         ]
         table_data.append(row)
-    
-    # Si no hay suficientes estudiantes, agregar filas vacías hasta 25
-    while len(table_data) < 27:  # 2 headers + 25 estudiantes
-        row = [f"{len(table_data)-1:02d}", "", "", "", "", ""]
-        table_data.append(row)
-    
-    # Crear tabla
+
+    while len(table_data) < 27:
+        table_data.append([f"{len(table_data)-1:02d}", "", "", "", "", ""])
+
     col_widths = [0.5*inch, 1.5*inch, 2.5*inch, 0.8*inch, 0.5*inch, 1*inch]
     table = Table(table_data, colWidths=col_widths)
-    
-    # Estilos de la tabla
-    table_style = [
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('BACKGROUND', (0, 0), (-1, 1), colors.grey),
-        ('ALIGN', (1, 2), (2, -1), 'LEFT'),  # Cédula y nombres alineados a la izquierda
-        ('ALIGN', (4, 2), (5, -1), 'LEFT'),  # Letras alineadas a la izquierda
-        ('ALIGN', (3, 2), (3, -1), 'CENTER'),  # Tipo examen centrado
-        ('ALIGN', (4, 2), (4, -1), 'RIGHT'),  # Números de calificación a la derecha
-        ('SPAN', (4, 0), (5, 0)),  # Combinar celdas para "CALIFICACION"
-    ]
-    
-    table.setStyle(TableStyle(table_style))
+    table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0,0), (-1,1), colors.grey),
+        ('ALIGN', (2,2), (2,-1), 'LEFT'),
+        ('ALIGN', (4,2), (4,-1), 'RIGHT'),
+        ('ALIGN', (3,2), (3,-1), 'CENTER'),
+        ('SPAN', (4,0), (5,0))
+    ]))
     elements.append(table)
-    elements.append(Spacer(1, 30))
-    
-    # Línea de validación
-    elements.append(Paragraph("_" * 80, styles['Normal']))
-    elements.append(Paragraph("VALIDO SIN ENMIENDAS", styles['Normal']))
-    elements.append(Paragraph("_" * 80, styles['Normal']))
+    elements.append(Spacer(1, 15))
+
+    # Info adicional
+    total_estudiantes = len(estudiantes_inscritos)
+    estudiantes_con_nota = len(notas)
+    estudiantes_sin_nota = total_estudiantes - estudiantes_con_nota
+    info_text = f"Total de estudiantes inscritos: {total_estudiantes} | Con nota asignada: {estudiantes_con_nota} | Sin nota: {estudiantes_sin_nota}"
+    elements.append(Paragraph(info_text, custom_normal))
     elements.append(Spacer(1, 20))
-    
+
     # Firmas
     elements.append(Paragraph("RECIBIDO Y REFRENDADO POR", subtitle_style))
-    elements.append(Spacer(1, 30))
-    
-    # Tabla de firmas
+    elements.append(Spacer(1, 20))
     firmas_data = [
+        ["_" * 20, "_" * 20, "_" * 20],
         ["ABRAHAN ANDREWS", "VICTOR MUJICA (E)", "STEFANO BONOLI"],
         ["V-8.297.067", "COORDINADOR DEL PROGRAMA", "D.A.C.E"],
         ["PROFESOR", "", ""]
     ]
-    
     firmas_table = Table(firmas_data, colWidths=[2*inch, 2*inch, 2*inch])
     firmas_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('LINEBELOW', (0, 0), (0, 0), 1, colors.black),
-        ('LINEBELOW', (1, 0), (1, 0), 1, colors.black),
-        ('LINEBELOW', (2, 0), (2, 0), 1, colors.black),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 9)
     ]))
     elements.append(firmas_table)
     elements.append(Spacer(1, 20))
-    
-    # Información de copias
-    copias_text = "ORIGINAL:D.A.C.E    1ra COPIA: COMPUTACION    2da COPIA: Coord. DEL PROGRAMA    3ra COPIA: CONCEJO DE ESTUDIOS DE POSTGRADO"
-    elements.append(Paragraph(copias_text, styles['Normal']))
-    
-    # Construir PDF
+
+    # Copias
+    elements.append(Paragraph(
+        "ORIGINAL:D.A.C.E    1ra COPIA: COMPUTACIÓN    2da COPIA: Coord. DEL PROGRAMA    3ra COPIA: CONCEJO DE ESTUDIOS DE POSTGRADO",
+        custom_normal))
+
     doc.build(elements)
     buffer.seek(0)
-    
+
     return send_file(
         buffer,
         as_attachment=True,
         download_name=f'acta_evaluacion_{materia.nombre}_{profesor.apellido}.pdf',
         mimetype='application/pdf'
     )
+
