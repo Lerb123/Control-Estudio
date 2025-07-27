@@ -17,8 +17,18 @@
     {% if asignaciones %}
         {% for asignacion in asignaciones %}
         <div class="tabla-estudiantes-contenedor">
-            <h3>{{ asignacion.materia.nombre }} - Corte: {{ asignacion.corte.seccion }} - {{ asignacion.corte.zona }}</h3>
-            <p><strong>Programa:</strong> {{ asignacion.materia.programa.nombre }}</p>
+            <div class="materia-header">
+                <div class="materia-info">
+                    <h3>{{ asignacion.materia.nombre }} - Corte: {{ asignacion.corte.seccion }} - {{ asignacion.corte.zona }}</h3>
+                    <p><strong>Programa:</strong> {{ asignacion.materia.programa.nombre }}</p>
+                </div>
+                <div class="materia-actions">
+                    <a href="{{ url_for('profesores.generar_pdf_notas_materia_profesor', cedula=profesor.cedula, materia_codigo=asignacion.materia.codigo) }}" 
+                       class="btn-generar-pdf-materia">
+                        📄 PDF {{ asignacion.materia.nombre }}
+                    </a>
+                </div>
+            </div>
             
             {% set estudiantes_inscritos = asignacion.corte.inscripciones %}
             {% if estudiantes_inscritos %}
@@ -128,6 +138,39 @@
 
 .text-muted {
     color: #6c757d !important;
+}
+
+.materia-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.materia-info {
+    flex: 1;
+}
+
+.materia-actions {
+    flex-shrink: 0;
+}
+
+.btn-generar-pdf-materia {
+    background-color: #28a745;
+    color: white;
+    padding: 8px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.btn-generar-pdf-materia:hover {
+    background-color: #218838;
+    color: white;
+    text-decoration: none;
 }
 </style>
 {% endblock %} 

@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, send_file
 from modulos.profesores import bp
 from modulos import db
 from modulos.profesores.models import Profesor
@@ -7,6 +7,7 @@ from modulos.estudiantes.models import Estudiante
 from sqlalchemy.exc import IntegrityError
 from modulos.central.models import Persona
 from datetime import datetime
+from modulos.profesores.utils.pdf_generator import generar_pdf_notas_materia
 
 @bp.route('/')
 def index():
@@ -340,3 +341,37 @@ def editar_nota(cedula, estudiante_cedula, materia_codigo):
                          estudiante=estudiante, 
                          materia=materia, 
                          nota=nota)
+
+@bp.route('/profesores/<cedula>/notas/<materia_codigo>/pdf')
+def generar_pdf_notas_materia_profesor(cedula, materia_codigo):
+    """
+    Genera y descarga un PDF con las notas de los estudiantes para una materia específica
+    """
+    profesor = Profesor.query.get_or_404(cedula)
+    materia = Materia.query.get_or_404(materia_codigo)
+    
+    # Verificar que el profesor tiene asignada esta materia
+    asignacion = AsignacionMateria.query.filter_by(
+        profesor_id=cedula,
+        materia_codigo=materia_codigo
+    ).first()
+    
+    if not asignacion:
+        flash('No tiene permiso para generar PDF de esta materia', 'error')
+        return redirect(url_for('profesores.notas_profesor', cedula=cedula))
+    
+    # Obtener las notas de esta materia específica
+    notas = Nota.query.filter_by(materia_codigo=materia_codigo).all()
+    
+    # Generar el PDF
+    pdf_buffer = generar_pdf_notas_materia(profesor, asignacion, notas)
+    
+    # Nombre del archivo
+    nombre_archivo = f"notas_{materia.nombre}_{profesor.nombre}_{profesor.apellido}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=nombre_archivo,
+        mimetype='application/pdf'
+    )
