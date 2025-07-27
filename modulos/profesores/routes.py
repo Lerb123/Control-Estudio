@@ -316,8 +316,8 @@ def editar_nota(cedula, estudiante_cedula, materia_codigo):
     if request.method == 'POST':
         nueva_nota = float(request.form['nota'])
         
-        if nueva_nota < 0 or nueva_nota > 20:
-            flash('La nota debe estar entre 0 y 20', 'error')
+        if nueva_nota < 0 or nueva_nota > 10:
+            flash('La nota debe estar entre 0 y 10', 'error')
             return render_template('profesores/editar_nota.html', 
                                 profesor=profesor, 
                                 estudiante=estudiante, 
@@ -430,26 +430,6 @@ def crear_acta_pdf(cedula, materia_codigo):
             return "NUEVE"
         elif numero == 10:
             return "DIEZ"
-        elif numero == 11:
-            return "ONCE"
-        elif numero == 12:
-            return "DOCE"
-        elif numero == 13:
-            return "TRECE"
-        elif numero == 14:
-            return "CATORCE"
-        elif numero == 15:
-            return "QUINCE"
-        elif numero == 16:
-            return "DIECISEIS"
-        elif numero == 17:
-            return "DIECISIETE"
-        elif numero == 18:
-            return "DIECIOCHO"
-        elif numero == 19:
-            return "DIECINUEVE"
-        elif numero == 20:
-            return "VEINTE"
         else:
             return "NC"
     
