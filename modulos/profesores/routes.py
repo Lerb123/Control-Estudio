@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request, send_file
+from flask import render_template, redirect, url_for, flash, request, send_file, jsonify
 from modulos.profesores import bp
 from modulos import db
 from modulos.profesores.models import Profesor
@@ -7,7 +7,7 @@ from modulos.estudiantes.models import Estudiante
 from sqlalchemy.exc import IntegrityError
 from modulos.central.models import Persona
 from datetime import datetime
-from modulos.profesores.utils.pdf_generator import generar_pdf_notas_materia
+from modulos.profesores.utils.pdf_generator import generar_pdf_notas_materia, generar_vista_previa_html
 
 @bp.route('/')
 def index():
@@ -342,10 +342,39 @@ def editar_nota(cedula, estudiante_cedula, materia_codigo):
                          materia=materia, 
                          nota=nota)
 
-@bp.route('/profesores/<cedula>/notas/<materia_codigo>/pdf')
-def generar_pdf_notas_materia_profesor(cedula, materia_codigo):
+@bp.route('/profesores/<cedula>/notas/<materia_codigo>/vista-previa')
+def vista_previa_pdf_notas(cedula, materia_codigo):
     """
-    Genera y descarga un PDF con las notas de los estudiantes para una materia específica
+    Genera una vista previa HTML del PDF de notas
+    """
+    profesor = Profesor.query.get_or_404(cedula)
+    materia = Materia.query.get_or_404(materia_codigo)
+    
+    # Verificar que el profesor tiene asignada esta materia
+    asignacion = AsignacionMateria.query.filter_by(
+        profesor_id=cedula,
+        materia_codigo=materia_codigo
+    ).first()
+    
+    if not asignacion:
+        flash('No tiene permiso para generar vista previa de esta materia', 'error')
+        return redirect(url_for('profesores.notas_profesor', cedula=cedula))
+    
+    # Obtener las notas de esta materia específica
+    notas = Nota.query.filter_by(materia_codigo=materia_codigo).all()
+    
+    # Generar la vista previa HTML
+    vista_previa_html = generar_vista_previa_html(profesor, asignacion, notas)
+    
+    return render_template('profesores/vista_previa_pdf.html', 
+                         profesor=profesor, 
+                         materia=materia, 
+                         vista_previa_html=vista_previa_html)
+
+@bp.route('/profesores/<cedula>/notas/<materia_codigo>/pdf-desde-vista-previa')
+def generar_pdf_desde_vista_previa(cedula, materia_codigo):
+    """
+    Genera un PDF basado en la vista previa actual del acta
     """
     profesor = Profesor.query.get_or_404(cedula)
     materia = Materia.query.get_or_404(materia_codigo)
@@ -364,14 +393,22 @@ def generar_pdf_notas_materia_profesor(cedula, materia_codigo):
     notas = Nota.query.filter_by(materia_codigo=materia_codigo).all()
     
     # Generar el PDF
-    pdf_buffer = generar_pdf_notas_materia(profesor, asignacion, notas)
-    
-    # Nombre del archivo
-    nombre_archivo = f"notas_{materia.nombre}_{profesor.nombre}_{profesor.apellido}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    
-    return send_file(
-        pdf_buffer,
-        as_attachment=True,
-        download_name=nombre_archivo,
-        mimetype='application/pdf'
-    )
+    try:
+        pdf_buffer = generar_pdf_notas_materia(profesor, asignacion, notas, usar_html=True)
+        
+        # Nombre del archivo
+        nombre_archivo = f"acta_evaluacion_{materia.nombre}_{profesor.nombre}_{profesor.apellido}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
+        return send_file(
+            pdf_buffer,
+            as_attachment=True,
+            download_name=nombre_archivo,
+            mimetype='application/pdf'
+        )
+        
+    except ImportError as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('profesores.vista_previa_pdf_notas', cedula=cedula, materia_codigo=materia_codigo))
+    except Exception as e:
+        flash(f'Error al generar PDF: {str(e)}', 'error')
+        return redirect(url_for('profesores.vista_previa_pdf_notas', cedula=cedula, materia_codigo=materia_codigo))

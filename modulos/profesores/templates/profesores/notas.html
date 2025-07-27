@@ -23,9 +23,9 @@
                     <p><strong>Programa:</strong> {{ asignacion.materia.programa.nombre }}</p>
                 </div>
                 <div class="materia-actions">
-                    <a href="{{ url_for('profesores.generar_pdf_notas_materia_profesor', cedula=profesor.cedula, materia_codigo=asignacion.materia.codigo) }}" 
-                       class="btn-generar-pdf-materia">
-                        📄 PDF {{ asignacion.materia.nombre }}
+                    <a href="{{ url_for('profesores.vista_previa_pdf_notas', cedula=profesor.cedula, materia_codigo=asignacion.materia.codigo) }}" 
+                       class="btn-vista-previa-materia">
+                        👁️ Ver PDF
                     </a>
                 </div>
             </div>
@@ -153,6 +153,26 @@
 
 .materia-actions {
     flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-vista-previa-materia {
+    background-color: #17a2b8;
+    color: white;
+    padding: 8px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.btn-vista-previa-materia:hover {
+    background-color: #138496;
+    color: white;
+    text-decoration: none;
 }
 
 .btn-generar-pdf-materia {
