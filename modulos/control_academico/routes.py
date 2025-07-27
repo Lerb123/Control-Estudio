@@ -6,6 +6,7 @@ from modulos.control_academico.models import (
 )
 # from modulos.profesores.models import Profesor
 from modulos.estudiantes.models import Estudiante
+from modulos.profesores.models import Profesor
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
