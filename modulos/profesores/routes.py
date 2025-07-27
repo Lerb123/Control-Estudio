@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request, send_file, jsonify
+from flask import render_template, redirect, url_for, flash, request, send_file, jsonify, Response
 from modulos.profesores import bp
 from modulos import db
 from modulos.profesores.models import Profesor
@@ -7,7 +7,14 @@ from modulos.estudiantes.models import Estudiante
 from sqlalchemy.exc import IntegrityError
 from modulos.central.models import Persona
 from datetime import datetime
-from modulos.profesores.utils.pdf_generator import generar_pdf_notas_materia, generar_vista_previa_html
+from flask import render_template_string
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+import io
+import os
 
 @bp.route('/')
 def index():
@@ -316,37 +323,9 @@ def editar_nota(cedula, estudiante_cedula, materia_codigo):
                                 estudiante=estudiante, 
                                 materia=materia, 
                                 nota=nota)
-        
-        try:
-            if nota:
-                nota.nota = nueva_nota
-                nota.fecha_registro = datetime.utcnow()
-            else:
-                nueva_nota_obj = Nota(
-                    estudiante_id=estudiante_cedula,
-                    materia_codigo=materia_codigo,
-                    nota=nueva_nota
-                )
-                db.session.add(nueva_nota_obj)
-            
-            db.session.commit()
-            flash('Nota actualizada exitosamente', 'success')
-            return redirect(url_for('profesores.notas_profesor', cedula=cedula))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error al actualizar la nota: {str(e)}', 'error')
-    
-    return render_template('profesores/editar_nota.html', 
-                         profesor=profesor, 
-                         estudiante=estudiante, 
-                         materia=materia, 
-                         nota=nota)
 
-@bp.route('/profesores/<cedula>/notas/<materia_codigo>/vista-previa')
-def vista_previa_pdf_notas(cedula, materia_codigo):
-    """
-    Genera una vista previa HTML del PDF de notas
-    """
+@bp.route('/profesores/<cedula>/crear_acta_pdf/<materia_codigo>')
+def crear_acta_pdf(cedula, materia_codigo):
     profesor = Profesor.query.get_or_404(cedula)
     materia = Materia.query.get_or_404(materia_codigo)
     
@@ -357,58 +336,206 @@ def vista_previa_pdf_notas(cedula, materia_codigo):
     ).first()
     
     if not asignacion:
-        flash('No tiene permiso para generar vista previa de esta materia', 'error')
+        flash('No tiene permiso para generar acta de esta materia', 'error')
         return redirect(url_for('profesores.notas_profesor', cedula=cedula))
     
-    # Obtener las notas de esta materia específica
+    # Obtener todas las notas de la materia
     notas = Nota.query.filter_by(materia_codigo=materia_codigo).all()
     
-    # Generar la vista previa HTML
-    vista_previa_html = generar_vista_previa_html(profesor, asignacion, notas)
+    # Crear el PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
     
-    return render_template('profesores/vista_previa_pdf.html', 
-                         profesor=profesor, 
-                         materia=materia, 
-                         vista_previa_html=vista_previa_html)
-
-@bp.route('/profesores/<cedula>/notas/<materia_codigo>/pdf-desde-vista-previa')
-def generar_pdf_desde_vista_previa(cedula, materia_codigo):
-    """
-    Genera un PDF basado en la vista previa actual del acta
-    """
-    profesor = Profesor.query.get_or_404(cedula)
-    materia = Materia.query.get_or_404(materia_codigo)
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=20,
+        alignment=1,  # Centrado
+        fontName='Helvetica-Bold'
+    )
     
-    # Verificar que el profesor tiene asignada esta materia
-    asignacion = AsignacionMateria.query.filter_by(
-        profesor_id=cedula,
-        materia_codigo=materia_codigo
-    ).first()
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=15,
+        alignment=1,  # Centrado
+        fontName='Helvetica-Bold'
+    )
     
-    if not asignacion:
-        flash('No tiene permiso para generar PDF de esta materia', 'error')
-        return redirect(url_for('profesores.notas_profesor', cedula=cedula))
+    # Encabezado
+    elements.append(Paragraph("UNIVERSIDAD DE ORIENTE", title_style))
+    elements.append(Paragraph("POSTGRADO - ACTA DE EVALUACIÓN", subtitle_style))
+    elements.append(Spacer(1, 20))
     
-    # Obtener las notas de esta materia específica
-    notas = Nota.query.filter_by(materia_codigo=materia_codigo).all()
+    # Información del curso
+    curso_data = [
+        ['CODIGO', 'ASIGNATURA', 'SECC', 'AÑO', 'PER', 'LAPSO'],
+        [str(materia.codigo), materia.nombre.upper(), 'GGIA', '2024', '', 'diciembre - 2024']
+    ]
     
-    # Generar el PDF
-    try:
-        pdf_buffer = generar_pdf_notas_materia(profesor, asignacion, notas, usar_html=True)
+    curso_table = Table(curso_data, colWidths=[1*inch, 2.5*inch, 0.8*inch, 0.8*inch, 0.8*inch, 1.5*inch])
+    curso_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+    ]))
+    elements.append(curso_table)
+    elements.append(Spacer(1, 15))
+    
+    # Información del profesor
+    elements.append(Paragraph("PROFESOR", subtitle_style))
+    elements.append(Paragraph(f"{profesor.apellido} {profesor.nombre}", styles['Normal']))
+    elements.append(Paragraph(f"V-{profesor.cedula}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Tabla de estudiantes y notas
+    headers = ['N°', 'CEDULA DE IDENTIDAD', 'APELLIDOS Y NOMBRES', 'TIPO EXAMEN', 'CALIFICACION']
+    calificacion_headers = ['N°', 'LETRAS']
+    
+    # Crear tabla con subcolumnas para calificación
+    table_data = [headers]
+    
+    # Agregar subheaders para calificación
+    calificacion_row = ['', '', '', '', 'N°', 'LETRAS']
+    table_data.append(calificacion_row)
+    
+    # Función para convertir número a letras
+    def numero_a_letras(numero):
+        if numero == 0:
+            return "CERO"
+        elif numero == 1:
+            return "UNO"
+        elif numero == 2:
+            return "DOS"
+        elif numero == 3:
+            return "TRES"
+        elif numero == 4:
+            return "CUATRO"
+        elif numero == 5:
+            return "CINCO"
+        elif numero == 6:
+            return "SEIS"
+        elif numero == 7:
+            return "SIETE"
+        elif numero == 8:
+            return "OCHO"
+        elif numero == 9:
+            return "NUEVE"
+        elif numero == 10:
+            return "DIEZ"
+        elif numero == 11:
+            return "ONCE"
+        elif numero == 12:
+            return "DOCE"
+        elif numero == 13:
+            return "TRECE"
+        elif numero == 14:
+            return "CATORCE"
+        elif numero == 15:
+            return "QUINCE"
+        elif numero == 16:
+            return "DIECISEIS"
+        elif numero == 17:
+            return "DIECISIETE"
+        elif numero == 18:
+            return "DIECIOCHO"
+        elif numero == 19:
+            return "DIECINUEVE"
+        elif numero == 20:
+            return "VEINTE"
+        else:
+            return "NC"
+    
+    # Agregar datos de estudiantes
+    for i, nota in enumerate(notas, 1):
+        estudiante = nota.estudiante
+        numero_nota = int(nota.nota) if nota.nota.is_integer() else nota.nota
+        letras_nota = numero_a_letras(int(nota.nota)) if nota.nota.is_integer() else "NC"
         
-        # Nombre del archivo
-        nombre_archivo = f"acta_evaluacion_{materia.nombre}_{profesor.nombre}_{profesor.apellido}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        
-        return send_file(
-            pdf_buffer,
-            as_attachment=True,
-            download_name=nombre_archivo,
-            mimetype='application/pdf'
-        )
-        
-    except ImportError as e:
-        flash(f'Error: {str(e)}', 'error')
-        return redirect(url_for('profesores.vista_previa_pdf_notas', cedula=cedula, materia_codigo=materia_codigo))
-    except Exception as e:
-        flash(f'Error al generar PDF: {str(e)}', 'error')
-        return redirect(url_for('profesores.vista_previa_pdf_notas', cedula=cedula, materia_codigo=materia_codigo))
+        row = [
+            f"{i:02d}",
+            f"V-{estudiante.cedula}",
+            f"{estudiante.apellido} {estudiante.nombre}",
+            "F",  # Tipo examen (Final)
+            str(numero_nota),
+            letras_nota
+        ]
+        table_data.append(row)
+    
+    # Si no hay suficientes estudiantes, agregar filas vacías hasta 25
+    while len(table_data) < 27:  # 2 headers + 25 estudiantes
+        row = [f"{len(table_data)-1:02d}", "", "", "", "", ""]
+        table_data.append(row)
+    
+    # Crear tabla
+    col_widths = [0.5*inch, 1.5*inch, 2.5*inch, 0.8*inch, 0.5*inch, 1*inch]
+    table = Table(table_data, colWidths=col_widths)
+    
+    # Estilos de la tabla
+    table_style = [
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 1), colors.grey),
+        ('ALIGN', (1, 2), (2, -1), 'LEFT'),  # Cédula y nombres alineados a la izquierda
+        ('ALIGN', (4, 2), (5, -1), 'LEFT'),  # Letras alineadas a la izquierda
+        ('ALIGN', (3, 2), (3, -1), 'CENTER'),  # Tipo examen centrado
+        ('ALIGN', (4, 2), (4, -1), 'RIGHT'),  # Números de calificación a la derecha
+        ('SPAN', (4, 0), (5, 0)),  # Combinar celdas para "CALIFICACION"
+    ]
+    
+    table.setStyle(TableStyle(table_style))
+    elements.append(table)
+    elements.append(Spacer(1, 30))
+    
+    # Línea de validación
+    elements.append(Paragraph("_" * 80, styles['Normal']))
+    elements.append(Paragraph("VALIDO SIN ENMIENDAS", styles['Normal']))
+    elements.append(Paragraph("_" * 80, styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Firmas
+    elements.append(Paragraph("RECIBIDO Y REFRENDADO POR", subtitle_style))
+    elements.append(Spacer(1, 30))
+    
+    # Tabla de firmas
+    firmas_data = [
+        ["ABRAHAN ANDREWS", "VICTOR MUJICA (E)", "STEFANO BONOLI"],
+        ["V-8.297.067", "COORDINADOR DEL PROGRAMA", "D.A.C.E"],
+        ["PROFESOR", "", ""]
+    ]
+    
+    firmas_table = Table(firmas_data, colWidths=[2*inch, 2*inch, 2*inch])
+    firmas_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('LINEBELOW', (0, 0), (0, 0), 1, colors.black),
+        ('LINEBELOW', (1, 0), (1, 0), 1, colors.black),
+        ('LINEBELOW', (2, 0), (2, 0), 1, colors.black),
+    ]))
+    elements.append(firmas_table)
+    elements.append(Spacer(1, 20))
+    
+    # Información de copias
+    copias_text = "ORIGINAL:D.A.C.E    1ra COPIA: COMPUTACION    2da COPIA: Coord. DEL PROGRAMA    3ra COPIA: CONCEJO DE ESTUDIOS DE POSTGRADO"
+    elements.append(Paragraph(copias_text, styles['Normal']))
+    
+    # Construir PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f'acta_evaluacion_{materia.nombre}_{profesor.apellido}.pdf',
+        mimetype='application/pdf'
+    )

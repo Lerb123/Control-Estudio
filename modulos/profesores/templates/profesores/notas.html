@@ -23,9 +23,9 @@
                     <p><strong>Programa:</strong> {{ asignacion.materia.programa.nombre }}</p>
                 </div>
                 <div class="materia-actions">
-                    <a href="{{ url_for('profesores.vista_previa_pdf_notas', cedula=profesor.cedula, materia_codigo=asignacion.materia.codigo) }}" 
+                    <a href="{{ url_for('profesores.crear_acta_pdf', cedula=profesor.cedula, materia_codigo=asignacion.materia.codigo) }}" 
                        class="btn-vista-previa-materia">
-                        👁️ Ver PDF
+                        Crear Acta PDF
                     </a>
                 </div>
             </div>

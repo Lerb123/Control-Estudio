@@ -4,7 +4,7 @@ from modulos import db
 from modulos.control_academico.models import (
     Carrera, Programa, Materia, Corte, Inscripcion, Nota, AsignacionMateria
 )
-from modulos.profesores.models import Profesor
+# from modulos.profesores.models import Profesor
 from modulos.estudiantes.models import Estudiante
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
