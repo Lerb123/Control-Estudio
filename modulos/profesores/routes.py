@@ -7,7 +7,7 @@ import io
 import os
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.platypus import (
@@ -359,7 +359,7 @@ def crear_acta_pdf(cedula, materia_codigo):
             notas.append(nota)
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
     elements = []
 
     styles = getSampleStyleSheet()
@@ -444,14 +444,6 @@ def crear_acta_pdf(cedula, materia_codigo):
     ]))
     elements.append(table)
     elements.append(Spacer(1, 15))
-
-    # Info adicional
-    total_estudiantes = len(estudiantes_inscritos)
-    estudiantes_con_nota = len(notas)
-    estudiantes_sin_nota = total_estudiantes - estudiantes_con_nota
-    info_text = f"Total de estudiantes inscritos: {total_estudiantes} | Con nota asignada: {estudiantes_con_nota} | Sin nota: {estudiantes_sin_nota}"
-    elements.append(Paragraph(info_text, custom_normal))
-    elements.append(Spacer(1, 20))
 
     # Firmas
     elements.append(Paragraph("RECIBIDO Y REFRENDADO POR", subtitle_style))
