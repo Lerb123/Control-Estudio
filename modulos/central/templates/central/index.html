@@ -4,6 +4,49 @@
 
 {% block content %}
 <div class="welcome-container">
+    {% if session.get('usuario') %}
+        {# Contenido cuando el usuario ha iniciado sesión #}
+        <h1>Bienvenido, {{ session.get('usuario') }}</h1>
+        <div style="text-align:center; margin-top: 30px;">
+            <p>Has iniciado sesión como <strong>{{ session.get('rol') }}</strong></p>
+            <div style="margin-top: 20px;">
+                <a href="{{ url_for('central.logout') }}" class="btn">Cerrar sesión</a>
+            </div>
+        </div>
+    {% else %}
     <h1>Bienvenido al Sistema de Control de Estudios</h1>
+    <div style="max-width: 400px; margin: 2rem auto;">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="form-estudiante">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div class="form-row" style="width: 100%; max-width: 300px;">
+                    <div class="form-col" style="width: 100%;">
+                        <label for="usuario" style="display: block; text-align: center;">Usuario</label>
+                        <input type="text" id="usuario" name="usuario" placeholder="Usuario" required maxlength="50" autocomplete="username" style="width: 100%; text-align: center;">
+                    </div>
+                </div>
+                <div class="form-row" style="width: 100%; max-width: 300px; margin-top: 10px;">
+                    <div class="form-col" style="width: 100%;">
+                        <label for="contrasenia" style="display: block; text-align: center;">Contraseña</label>
+                        <input type="password" id="contrasenia" name="contrasenia" placeholder="Contraseña" required maxlength="100" autocomplete="current-password" style="width: 100%; text-align: center;">
+                    </div>
+                </div>
+                <button type="submit" class="btn-form-estudiante" style="margin-top: 20px; width: 100%;">Ingresar</button>
+            </div>
+        </form>
+        <div style="text-align:center; margin-top: 20px;">
+            <a href="{{ url_for('central.registrar_admin') }}" class="btn">Registrar Administrador</a>
+        </div>
+    </div>
+     {% endif %}
 </div>
-{% endblock %} 
+{% endblock %}

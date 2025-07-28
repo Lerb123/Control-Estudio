@@ -116,15 +116,17 @@ class Inscripcion(db.Model):
     corte_id = db.Column(db.Integer, db.ForeignKey('cortes.id'), nullable=False)
     fecha_inscripcion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     estado_pago = db.Column(db.Boolean, default=False)
+    monto_a_pagar = db.Column(db.Float, default=100, nullable=False)  # Nuevo campo
     
     # Relaciones
     estudiante = db.relationship('Estudiante', back_populates='inscripciones')
     corte = db.relationship('Corte', back_populates='inscripciones')
     
-    def __init__(self, estudiante_id, corte_id, estado_pago=False):
+    def __init__(self, estudiante_id, corte_id, estado_pago=False, monto_a_pagar=100):
         self.estudiante_id = estudiante_id
         self.corte_id = corte_id
         self.estado_pago = estado_pago
+        self.monto_a_pagar = monto_a_pagar
     
     def __repr__(self):
         return f'<Inscripcion {self.id} - Estudiante: {self.estudiante_id} - Corte: {self.corte_id}>'
@@ -154,22 +156,22 @@ class Pago(db.Model):
     __tablename__ = 'pagos'
     
     recibo = db.Column(db.String(50), primary_key=True)
+    vauche = db.Column(db.String(50), unique=True, nullable=False)
     estudiante_id = db.Column(db.String(20), db.ForeignKey('estudiantes.cedula'), nullable=False)
+    programa_id = db.Column(db.Integer, db.ForeignKey('programas.id'), nullable=False)  # Nuevo campo
     monto = db.Column(db.Float, nullable=False)
     fecha_pago = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)  # 'deposito' o 'pago_materia'
-    materia_codigo = db.Column(db.Integer, db.ForeignKey('materias.codigo'), nullable=True)  # Solo si es pago de materia
 
     estudiante = db.relationship('Estudiante', backref='pagos')
-    materia = db.relationship('Materia', backref='pagos')
+    programa = db.relationship('Programa', backref='pagos')  # Relación con Programa
 
-    def __init__(self, recibo, estudiante_id, monto, tipo, materia_codigo=None):
+    def __init__(self, recibo, vauche, estudiante_id, programa_id, monto):
         self.recibo = recibo
+        self.vauche = vauche
         self.estudiante_id = estudiante_id
+        self.programa_id = programa_id
         self.monto = monto
-        self.tipo = tipo
-        self.materia_codigo = materia_codigo
 
     def __repr__(self):
-        return f'<Pago Recibo: {self.recibo} - Estudiante: {self.estudiante_id} - Tipo: {self.tipo} - Monto: {self.monto}>'
+        return f'<Pago Recibo: {self.recibo} - Vauche: {self.vauche} - Estudiante: {self.estudiante_id} - Programa: {self.programa_id} - Monto: {self.monto}>'
 

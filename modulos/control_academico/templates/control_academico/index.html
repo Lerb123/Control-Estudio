@@ -3,6 +3,8 @@
 {% block title %} {{super ()}} Control Académico {% endblock %}
 
 {% block content %}
+{% if session.get('rol') == 'administrador' %}
+
 <div class="welcome-container">
     <h1 class="titulo-estudiantes">Control Académico</h1>
 
@@ -26,7 +28,9 @@
         </div>
     </div>
 </div>
-
+{% else %}
+    <h1 class="titulo-estudiantes">No deberias estar aqui</h1>
+{% endif %}
 <style>
 .dashboard-stats {
     display: grid;

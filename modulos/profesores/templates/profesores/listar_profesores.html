@@ -14,6 +14,7 @@ Lista de Profesores
         {% endfor %}
     {% endif %}
 {% endwith %}
+{% if session.get('rol') == 'administrador' %}
 
 <h2 class="titulo-estudiantes">Lista de Profesores</h2>
 <a href="{{ url_for('profesores.nuevo_profesor') }}">
@@ -58,4 +59,8 @@ Lista de Profesores
         <h2>No hay profesores registrados</h2>
     {% endif %}
 </div>
+
+{% else %}
+    <h1 class="titulo-estudiantes">No deberias estar aqui</h1>
+{% endif %}
 {% endblock %} 
