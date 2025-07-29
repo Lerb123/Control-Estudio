@@ -160,6 +160,8 @@ def inscripciones(cedula):
                     estado_pago=False
                 )
                 db.session.add(inscripcion)
+                # Sumar el monto de la inscripción a la deuda del estudiante
+                estudiante.deuda += inscripcion.monto_a_pagar
                 db.session.commit()
                 flash('Inscripción exitosa', 'success')
                 
@@ -183,7 +185,13 @@ def inscripciones(cedula):
 @bp.route('/eliminar_inscripcion/<int:inscripcion_id>')
 def eliminar_inscripcion(inscripcion_id):
     inscripcion = Inscripcion.query.get_or_404(inscripcion_id)
+    estudiante = Estudiante.query.get_or_404(inscripcion.estudiante_id)
     try:
+        # Restar el monto de la inscripción de la deuda si es mayor a 0
+        if inscripcion.monto_a_pagar > 0:
+            estudiante.deuda -= inscripcion.monto_a_pagar
+            if estudiante.deuda < 0:
+                estudiante.deuda = 0  # Evita deuda negativa
         db.session.delete(inscripcion)
         db.session.commit()
         flash('Inscripción eliminada exitosamente', 'success')
@@ -192,48 +200,63 @@ def eliminar_inscripcion(inscripcion_id):
         flash(f'Error al eliminar inscripción: {str(e)}', 'danger')
     return redirect(url_for('estudiantes.inscripciones', cedula=inscripcion.estudiante_id))
 
-@bp.route('/registrar_deposito/<cedula>', methods=['GET', 'POST'])
-def registrar_deposito(cedula):
+@bp.route('/registrar_deposito/<cedula>/<int:inscripcion_id>', methods=['GET', 'POST'])
+def registrar_deposito(cedula, inscripcion_id):
     estudiante = Estudiante.query.get_or_404(cedula)
+    inscripcion = Inscripcion.query.get_or_404(inscripcion_id)
+    
+    # Si el monto a pagar es 0, redirecciona automáticamente
+    if inscripcion.monto_a_pagar == 0:
+        flash('El programa ya está cancelado.', 'info')
+        return redirect(url_for('estudiantes.inscripciones', cedula=cedula))
+    
     if request.method == 'POST':
         recibo = request.form['recibo']
+        vauche = request.form.get('vauche')
         monto = float(request.form['monto'])
-        # Validar recibo único
-        if Pago.query.filter_by(recibo=recibo).first():
-            flash('Ya existe un pago con ese número de recibo.', 'danger')
-            return redirect(url_for('estudiantes.registrar_deposito', cedula=cedula))
+
+        # Validar recibo y vauche únicos
+        pago_existente = Pago.query.filter(
+            (Pago.recibo == recibo) | (Pago.vauche == vauche)
+        ).first()
+        if pago_existente:
+            flash('Ya existe un pago con ese número de recibo o voucher.', 'danger')
+            return redirect(url_for('estudiantes.registrar_deposito', cedula=cedula, inscripcion_id=inscripcion_id))
+
         try:
             pago = Pago(
                 recibo=recibo,
+                vauche=vauche,
                 estudiante_id=cedula,
-                monto=monto,
-                tipo='deposito'
+                programa_id=inscripcion.corte.programa_id,  # Usar programa_id del corte
+                monto=monto
             )
             db.session.add(pago)
-            # Sumar saldo al estudiante
-            estudiante.saldo_disponible += monto
+
+            monto_a_pagar = inscripcion.monto_a_pagar
+            saldo = estudiante.saldo or 0
+            total_disponible = monto + saldo
+
+            if total_disponible >= monto_a_pagar:
+                excedente = total_disponible - monto_a_pagar
+                estudiante.saldo = excedente
+                inscripcion.monto_a_pagar = 0
+                inscripcion.estado_pago = True
+                estudiante.deuda -= monto_a_pagar
+                flash('Pago realizado exitosamente.', 'success')
+            else:
+                inscripcion.monto_a_pagar -= monto
+                estudiante.saldo = max(saldo - (monto_a_pagar - monto), 0) if saldo > 0 else saldo
+                estudiante.deuda -= monto
+                if estudiante.deuda < 0:
+                    estudiante.deuda = 0
+                flash('Depósito aplicado parcialmente. Aún queda saldo pendiente.', 'warning')
+
             db.session.commit()
-            flash('Depósito registrado exitosamente.', 'success')
-            return redirect(url_for('estudiantes.index'))
+            return redirect(url_for('estudiantes.inscripciones', cedula=cedula))
         except Exception as e:
             db.session.rollback()
             flash(f'Error al registrar el depósito: {str(e)}', 'danger')
-    return render_template('estudiantes/registrar_deposito.html', estudiante=estudiante)
 
-@bp.route('/confirmar_pago/<int:inscripcion_id>', methods=['POST'])
-def confirmar_pago(inscripcion_id):
-    inscripcion = Inscripcion.query.get_or_404(inscripcion_id)
-    estudiante = Estudiante.query.get_or_404(inscripcion.estudiante_id)
-    monto_materia = 100  # Puedes cambiar este valor según tu lógica
-
-    if estudiante.saldo_disponible < monto_materia:
-        flash('Saldo insuficiente para pagar la materia. Debe tener al menos 100.', 'danger')
-        return redirect(url_for('estudiantes.inscripciones', cedula=estudiante.cedula))
-
-    # Descuenta el saldo y marca como pagado
-    estudiante.saldo_disponible -= monto_materia
-    inscripcion.estado_pago = True
-    db.session.commit()
-    flash('Pago realizado exitosamente.', 'success')
-    return redirect(url_for('estudiantes.inscripciones', cedula=estudiante.cedula))
+    return render_template('estudiantes/registrar_deposito.html', estudiante=estudiante, inscripcion=inscripcion)
 

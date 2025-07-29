@@ -57,3 +57,8 @@ class ControlEstudios(db.Model):
     
     def __repr__(self):
         return f'<ControlEstudios {self.nombre_institucion}>'
+
+class Administrador(Persona):
+    __mapper_args__ = {
+        'polymorphic_identity': 'administrador'
+    }

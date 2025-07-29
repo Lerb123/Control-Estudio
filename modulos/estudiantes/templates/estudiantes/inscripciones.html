@@ -13,7 +13,8 @@
 {% endwith %}
 
 <h2 class="titulo-estudiantes">Inscripciones de Estudiante</h2>
-
+{% if session.get('rol') == 'administrador' %}
+<!-- Solo administradores pueden inscribir materias -->
 <form action="{{ url_for('estudiantes.inscripciones', cedula=estudiante.cedula) }}" method="POST">
     <input type="hidden" name="cedula" value="{{ estudiante.cedula }}">
     <div class="form-group">
@@ -29,6 +30,8 @@
     </div>
     <button type="submit" class="btn-form-estudiante">Inscribir en Corte</button>
 </form>
+
+{% endif %}
 
 <div class="tabla-estudiantes-contenedor">
     {% if inscripciones %}
@@ -51,7 +54,7 @@
                 {% for inscripcion in inscripciones %}
                 <tr>
                     <td>{{ inscripcion.corte.id }}</td>
-                    <td>{{ inscripcion.corte.programa.nombre }}</td>
+                    <td>{{ inscripcion.corte.programa.nombre }}</td> <!-- Aquí se muestra el nombre del programa -->
                     <td>{{ inscripcion.corte.seccion }}</td>
                     <td>{{ inscripcion.corte.zona }}</td>
                     <td>{{ inscripcion.corte.fecha_inicio.strftime('%d/%m/%Y') }}</td>
@@ -65,18 +68,25 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if inscripcion.estado_pago %}
+                    {% if inscripcion.estado_pago or inscripcion.monto_a_pagar == 0 %}
                             <span class="badge badge-success">Pagado</span>
                         {% else %}
-                            <form action="{{ url_for('estudiantes.confirmar_pago', inscripcion_id=inscripcion.id) }}" method="post" style="display:inline;">
-                                <button type="submit" class="btn-accion editar" onclick="return confirm('¿Confirmar el pago de esta materia?')">Pendiente</button>
-                            </form>
+                            {% if session.get('rol') == 'estudiante' and session.get('cedula') == estudiante.cedula %}
+                                <a href="{{ url_for('estudiantes.registrar_deposito', cedula=estudiante.cedula, inscripcion_id=inscripcion.id) }}" 
+                                   class="btn-accion editar">Pendiente</a>
+                            {% else %}
+                                <span class="badge badge-warning">Pendiente</span>
+                            {% endif %}
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_for('estudiantes.eliminar_inscripcion', inscripcion_id=inscripcion.id) }}" 
-                           class="btn-accion eliminar"
-                           onclick="return confirm('¿Está seguro de eliminar esta inscripción?')">Eliminar</a>
+                        {% if session.get('rol') == 'administrador' %}
+                            <a href="{{ url_for('estudiantes.eliminar_inscripcion', inscripcion_id=inscripcion.id) }}" 
+                               class="btn-accion eliminar"
+                               onclick="return confirm('¿Está seguro de eliminar esta inscripción?')">Eliminar</a>
+                        {% else %}
+                            <span class="text-muted">No disponible</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

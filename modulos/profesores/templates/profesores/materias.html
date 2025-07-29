@@ -13,13 +13,13 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-
+{% if session.get('rol') == 'administrador' %}
     <!-- Botón para asignar nueva materia -->
     <div class="form-container">
         <h2>Asignar Nueva Materia</h2>
         <a href="{{ url_for('profesores.asignar_materia', cedula=profesor.cedula) }}" class="btn-form-estudiante">Asignar Materia</a>
     </div>
-
+{% endif %}
     <!-- Lista de materias asignadas al profesor -->
     <div class="tabla-estudiantes-contenedor">
         <h2>Mis Materias Asignadas</h2>
@@ -35,7 +35,9 @@
                         <th>Sección</th>
                         <th>Zona</th>
                         <th>Fecha Asignación</th>
-                        <th>Acciones</th>
+                         {% if session.get('rol') == 'administrador' %}
+                            <th>Acciones</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -48,11 +50,16 @@
                         <td>{{ asignacion.corte.seccion }}</td>
                         <td>{{ asignacion.corte.zona }}</td>
                         <td>{{ asignacion.fecha_asignacion.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>
-                            <a href="{{ url_for('profesores.desasignar_materia', cedula=profesor.cedula, asignacion_id=asignacion.id) }}" 
-                               class="btn-accion warning"
-                               onclick="return confirm('¿Está seguro de desasignar esta materia?')">Desasignar</a>
-                        </td>
+                        {% if session.get('rol') == 'administrador' %}
+                            <td>
+                                <a href="{{ url_for('profesores.desasignar_materia', cedula=profesor.cedula, asignacion_id=asignacion.id) }}" 
+                                   class="btn-accion warning"
+                                   onclick="return confirm('¿Está seguro de desasignar esta materia?')">
+                                   Desasignar
+                                </a>
+                            </td>
+                        {% endif %}
+                      
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -62,7 +69,9 @@
         {% endif %}
     </div>
 
-    <a href="{{ url_for('profesores.index') }}" class="btn-nuevo-estudiante">Volver a Profesores</a>
+        {% if session.get('rol') == 'administrador' %}
+        <a href="{{ url_for('profesores.index') }}" class="btn-nuevo-estudiante">Volver a Profesores</a>
+    {% endif %}
 </div>
 
 <style>

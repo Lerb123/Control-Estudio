@@ -9,12 +9,30 @@
         <h1>Control de Estudios</h1>
         <nav>
             <ul>
-                <li><a href="{{ url_for('estudiantes.index') }}">Estudiantes</a></li>
-                <li><a href="{{ url_for('profesores.index') }}">Profesores</a></li>
-                <li><a href="{{ url_for('control_academico.index') }}">Control Académico</a></li>
-                <li><a href="{{ url_for('central.index') }}">Central</a></li>
+                {% if session.get('rol') == 'administrador' %}
+                    <li><a href="{{ url_for('estudiantes.index') }}">Estudiantes</a></li>
+                    <li><a href="{{ url_for('profesores.index') }}">Profesores</a></li>
+                    <li><a href="{{ url_for('control_academico.index') }}">Control Académico</a></li>
+                    <li><a href="{{ url_for('central.index') }}">Central</a></li>
+                {% elif session.get('rol') == 'profesor' %}
+                    <li><a href="{{ url_for('profesores.materias_profesor', cedula=session.get('cedula')) }}">Profesor</a></li>
+                    <li><a href="{{ url_for('central.index') }}">Central</a></li>
+                {% elif session.get('rol') == 'estudiante' %}
+                    <li><a href="{{ url_for('estudiantes.inscripciones', cedula=session.get('cedula')) }}">Estudiante</a></li>
+                    <li><a href="{{ url_for('central.index') }}">Central</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('central.index') }}">Central</a></li>
+                {% endif %}
             </ul>
         </nav>
+        {% if session.get('usuario') %}
+        <div style="text-align:right; margin-right: 2rem;">
+            <span style="color:#2c3e50; font-weight:bold;">
+                Usuario: {{ session.get('usuario') }} | Rol: {{ session.get('rol') }}
+            </span>
+            <a href="{{ url_for('central.logout') }}" class="btn" style="margin-left: 10px;">Cerrar sesión</a>
+        </div>
+        {% endif %}
     </header>
     
     <main>
@@ -22,4 +40,4 @@
     </main>
     
 </body>
-</html> 
+</html>
