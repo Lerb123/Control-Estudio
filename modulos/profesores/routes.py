@@ -377,9 +377,20 @@ def crear_acta_pdf(cedula, materia_codigo):
     elements.append(Spacer(1, 12))
 
     # Info del curso
+    def obtener_nombre_mes(numero_mes):
+        meses = {
+            1: 'ENERO', 2: 'FEBRERO', 3: 'MARZO', 4: 'ABRIL',
+            5: 'MAYO', 6: 'JUNIO', 7: 'JULIO', 8: 'AGOSTO',
+            9: 'SEPTIEMBRE', 10: 'OCTUBRE', 11: 'NOVIEMBRE', 12: 'DICIEMBRE'
+        }
+        return meses.get(numero_mes, '')
+    
+    mes_fin = obtener_nombre_mes(asignacion.corte.fecha_fin.month)
+    lapso_texto = f"{mes_fin} - {asignacion.corte.fecha_fin.strftime('%Y')}"
+    
     info_data = [
-        ["CÓDIGO:", materia.codigo, "ASIGNATURA:", materia.nombre.upper(), "SECC:", asignacion.corte.seccion],
-        ["AÑO:", "2024", "PER:", "", "LAPSO:", f"{asignacion.corte.zona} - 2024"]
+        ["CÓDIGO:", "ASIGNATURA:",  "SECC:",'AÑO', "PER:","LAPSO:"],
+        [materia.codigo, materia.nombre.upper(), asignacion.corte.seccion.upper(), asignacion.corte.fecha_fin.strftime('%Y'), ' ' , lapso_texto]
     ]
     info_table = Table(info_data, colWidths=[0.8*inch, 1.2*inch, 1.2*inch, 2.5*inch, 0.8*inch, 1.3*inch])
     info_table.setStyle(TableStyle([
@@ -394,8 +405,13 @@ def crear_acta_pdf(cedula, materia_codigo):
 
     # Profesor
     elements.append(Paragraph("PROFESOR", subtitle_style))
-    elements.append(Paragraph(f"{profesor.apellido} {profesor.nombre}", custom_normal))
-    elements.append(Paragraph(f"V-{profesor.cedula}", custom_normal))
+    
+    # Crear estilos centrados para el profesor
+    profesor_nombre_style = ParagraphStyle('ProfesorNombre', parent=custom_normal, alignment=1)  # 1 = centrado
+    profesor_cedula_style = ParagraphStyle('ProfesorCedula', parent=custom_normal, alignment=1)  # 1 = centrado
+    
+    elements.append(Paragraph(f"{profesor.nombre.upper()} {profesor.apellido.upper()}", profesor_nombre_style))
+    elements.append(Paragraph(f"V-{profesor.cedula}", profesor_cedula_style))
     elements.append(Spacer(1, 10))
 
     # Tabla encabezados
@@ -450,9 +466,9 @@ def crear_acta_pdf(cedula, materia_codigo):
     elements.append(Spacer(1, 20))
     firmas_data = [
         ["_" * 20, "_" * 20, "_" * 20],
-        ["ABRAHAN ANDREWS", "VICTOR MUJICA (E)", "STEFANO BONOLI"],
-        ["V-8.297.067", "COORDINADOR DEL PROGRAMA", "D.A.C.E"],
-        ["PROFESOR", "", ""]
+        [f"{profesor.nombre.upper()} {profesor.apellido.upper()}", "VICTOR MUJICA (E)", "STEFANO BONOLI"],
+        [f"V-{profesor.cedula}", "", ""],
+        ["PROFESOR", "COORDINADOR DEL PROGRAMA", "D.A.C.E"]
     ]
     firmas_table = Table(firmas_data, colWidths=[2*inch, 2*inch, 2*inch])
     firmas_table.setStyle(TableStyle([
