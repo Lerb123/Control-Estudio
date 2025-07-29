@@ -380,7 +380,11 @@ def crear_acta_pdf(cedula, materia_codigo):
     logo = Image(logo_path, width=1*inch, height=1*inch)
     header_data = [[logo, Paragraph("<b>UNIVERSIDAD DE ORIENTE</b><br/>POSTGRADO - ACTA DE EVALUACIÓN", title_style)]]
     header_table = Table(header_data, colWidths=[1.2*inch, 5.8*inch])
-    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'CENTER')]))
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), 
+        ('ALIGN', (1,0), (1,0), 'CENTER'),
+        ('GRID', (0,0), (-1,-1), 1, colors.black)  # Bordes para toda la tabla
+    ]))
     elements.append(header_table)
     elements.append(Spacer(1, 12))
 
@@ -400,13 +404,14 @@ def crear_acta_pdf(cedula, materia_codigo):
         ["CÓDIGO:", "ASIGNATURA:",  "SECC:",'AÑO', "PER:","LAPSO:"],
         [materia.codigo, materia.nombre.upper(), asignacion.corte.seccion.upper(), asignacion.corte.fecha_fin.strftime('%Y'), ' ' , lapso_texto]
     ]
-    info_table = Table(info_data, colWidths=[0.8*inch, 1.2*inch, 1.2*inch, 2.5*inch, 0.8*inch, 1.3*inch])
+    info_table = Table(info_data, colWidths=[0.8*inch, 1.2*inch, 1.2*inch, 1.5*inch, 0.8*inch, 1.3*inch])
     info_table.setStyle(TableStyle([
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
         ('FONTSIZE', (0,0), (-1,-1), 9),
         ('ALIGN', (0,0), (-1,-1), 'LEFT'),
         ('BOTTOMPADDING', (0,0), (-1,-1), 2),
         ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('GRID', (0,0), (-1,-1), 1, colors.black)  # Bordes para toda la tabla
     ]))
     elements.append(info_table)
     elements.append(Spacer(1, 10))
@@ -450,7 +455,7 @@ def crear_acta_pdf(cedula, materia_codigo):
         ]
         table_data.append(row)
 
-    while len(table_data) < 27:
+    while len(table_data) < 19:
         table_data.append([f"{len(table_data)-1:02d}", "", "", "", "", ""])
 
     col_widths = [0.5*inch, 1.5*inch, 2.5*inch, 1.0*inch, 0.5*inch, 1*inch]
@@ -469,6 +474,11 @@ def crear_acta_pdf(cedula, materia_codigo):
     elements.append(table)
     elements.append(Spacer(1, 15))
 
+    #valido sin enmiendas
+    valido_style = ParagraphStyle('Validado', parent=custom_normal, fontSize=7, alignment=1, fontName='Helvetica-Bold')  # Fuente más pequeña y centrada
+    elements.append(Paragraph("VALIDO SIN ENMIENDAS", valido_style))
+    elements.append(Spacer(1, 10))
+
     # Firmas
     firmas_data = [
         ["", "RECIBIDO Y REFRENDADO POR", "RECIBIDO Y REFRENDADO POR"],
@@ -482,19 +492,26 @@ def crear_acta_pdf(cedula, materia_codigo):
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
         ('FONTSIZE', (0,0), (-1,-1), 9),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),  # Primera fila en negrita
-        ('FONTSIZE', (0,0), (-1,0), 9),  # Tamaño de fuente más grande para el título
+        ('FONTNAME', (0,0), (-1,1), 'Helvetica-Bold'),  # Primera y segunda fila en negrita
+        ('FONTSIZE', (0,0), (-1,1), 9),  # Tamaño de fuente para los títulos
         ('SPAN', (0,0), (0,0)),  # Evitar que se divida el texto
         ('SPAN', (1,0), (1,0)),
-        ('SPAN', (2,0), (2,0))
+        ('SPAN', (2,0), (2,0)),
+        ('SPAN', (0,1), (0,1)),  # Para la segunda fila
+        ('SPAN', (1,1), (1,1)),
+        ('SPAN', (2,1), (2,1)),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),  # Bordes para toda la tabla
+        ('TOPPADDING', (0,1), (-1,1), 20),  # Más espacio sobre las líneas de firma (fila 1)
+        ('BOTTOMPADDING', (0,1), (-1,1), 5)  # Espacio inferior de las líneas de firma
     ]))
     elements.append(firmas_table)
     elements.append(Spacer(1, 20))
 
     # Copias
+    copias_style = ParagraphStyle('Copias', parent=custom_normal, fontSize=7, alignment=1)  # Fuente más pequeña y centrada
     elements.append(Paragraph(
         "ORIGINAL:D.A.C.E    1ra COPIA: COMPUTACIÓN    2da COPIA: Coord. DEL PROGRAMA    3ra COPIA: CONCEJO DE ESTUDIOS DE POSTGRADO",
-        custom_normal))
+        copias_style))
 
     doc.build(elements)
     buffer.seek(0)
