@@ -359,7 +359,15 @@ def crear_acta_pdf(cedula, materia_codigo):
             notas.append(nota)
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    # Configurar márgenes: (izquierda, arriba, derecha, abajo) en pulgadas
+    doc = SimpleDocTemplate(
+        buffer, 
+        pagesize=letter,
+        leftMargin=0.5*inch,    # Margen izquierdo
+        rightMargin=0.5*inch,   # Margen derecho (igual al izquierdo)
+        topMargin=0.3*inch,     # Margen superior reducido
+        bottomMargin=0.5*inch   # Margen inferior
+    )
     elements = []
 
     styles = getSampleStyleSheet()
@@ -435,7 +443,7 @@ def crear_acta_pdf(cedula, materia_codigo):
         row = [
             f"{i:02d}",
             f"V-{estudiante.cedula}",
-            f"{estudiante.apellido} {estudiante.nombre}",
+            f"{estudiante.apellido.upper()} {estudiante.nombre.upper()}",
             "F",
             str(numero_nota),
             letras_nota
@@ -445,7 +453,7 @@ def crear_acta_pdf(cedula, materia_codigo):
     while len(table_data) < 27:
         table_data.append([f"{len(table_data)-1:02d}", "", "", "", "", ""])
 
-    col_widths = [0.5*inch, 1.5*inch, 2.5*inch, 0.8*inch, 0.5*inch, 1*inch]
+    col_widths = [0.5*inch, 1.5*inch, 2.5*inch, 1.0*inch, 0.5*inch, 1*inch]
     table = Table(table_data, colWidths=col_widths)
     table.setStyle(TableStyle([
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
@@ -462,9 +470,8 @@ def crear_acta_pdf(cedula, materia_codigo):
     elements.append(Spacer(1, 15))
 
     # Firmas
-    elements.append(Paragraph("RECIBIDO Y REFRENDADO POR", subtitle_style))
-    elements.append(Spacer(1, 20))
     firmas_data = [
+        ["", "RECIBIDO Y REFRENDADO POR", "RECIBIDO Y REFRENDADO POR"],
         ["_" * 20, "_" * 20, "_" * 20],
         [f"{profesor.nombre.upper()} {profesor.apellido.upper()}", "VICTOR MUJICA (E)", "STEFANO BONOLI"],
         [f"V-{profesor.cedula}", "", ""],
@@ -474,7 +481,12 @@ def crear_acta_pdf(cedula, materia_codigo):
     firmas_table.setStyle(TableStyle([
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 9)
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),  # Primera fila en negrita
+        ('FONTSIZE', (0,0), (-1,0), 9),  # Tamaño de fuente más grande para el título
+        ('SPAN', (0,0), (0,0)),  # Evitar que se divida el texto
+        ('SPAN', (1,0), (1,0)),
+        ('SPAN', (2,0), (2,0))
     ]))
     elements.append(firmas_table)
     elements.append(Spacer(1, 20))
